@@ -6,13 +6,14 @@ import shutil
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # TODO: verify these paths exist, print nice error if they don't
-PLY_PATH = os.path.join(SCRIPT_DIR, "deps", "ply-3.11")
-CPP_HEADER_PARSER_PATH = os.path.join(SCRIPT_DIR, "deps", "CppHeaderParser-2.7.4", "CppHeaderParser")
+PCPP_PATH      = os.path.join(SCRIPT_DIR, "deps", "pcpp-1.21")
+PYCPARSER_PATH = os.path.join(SCRIPT_DIR, "deps", "pycparser-2.20")
 
-sys.path.insert(0, PLY_PATH)
-sys.path.insert(0, CPP_HEADER_PARSER_PATH)
+sys.path.insert(0, PCPP_PATH)
+sys.path.insert(0, PYCPARSER_PATH)
 
-import CppHeaderParser
+import pcpp
+import pycparser
 
 def parseHeader(header_filename):
     print("{}".format(header_filename))
@@ -45,6 +46,16 @@ def parseHeadersIn(dir, exclude):
             except RecursionError as re:
                 print("PARSEERROR: {}".format(entry_basename))
 
+
+class CustomPreprocessor(pcpp.Preprocessor):
+    def __init__(self):
+        pcpp.Preprocessor.__init__(self)
+    def on_directive_handle(self, directive, toks, ifpassthru, precedingtoks):
+        pcpp.Preprocessor.on_directive_handle(self, directive, toks, ifpassthru, precedingtoks)
+        #print("CustomPreprocessor: on_directive_handle '{}'".format(directive))
+        if directive.value == "include":
+            print("TODO: handle include '{}'".format(''.join([t.value for t in toks])))
+
 class JsonGenerator:
     def __init__(self, out_dir):
         self.out_dir = out_dir
@@ -73,22 +84,30 @@ class JsonGenerator:
         filename = self.findInclude(include)
         self.include_map = filename
 
-        header = CppHeaderParser.CppHeader(filename)
+        with open(filename, "r") as file:
+            preprocessor = CustomPreprocessor()
+            for dir in self.include_dirs:
+                preprocessor.add_path(dir)
+            preprocessor.parse(file)
+        preprocessed_file = os.path.join(self.out_dir, include + ".preprocessed")
+        #with open(preprocessed_file, "w") as file:
+        #    preprocessor.write(file)
+        ast = pycparser.parse_file(preprocessed_file)
         with open(os.path.join(self.out_dir, include + ".json"), "w") as out_file:
-            out_file.write("{}\n".format(vars(header)))
-            out_file.write('{\n')
-            out_file.write('  "includes": [')
-            prefix = ""
-            for incl in header.includes:
-                out_file.write('{}\n    "{}"'.format(prefix, incl))
-                prefix = ","
-            out_file.write(']\n')
-            #out_file.write("{}\n".format(vars(header)))
-            #for define in header.defines:
-            #    out_file.write("   {}\n".format(define))
-            #for func in header.functions:
-            #    out_file.write("   {}\n".format(func["name"]))
-            out_file.write('}\n')
+            out_file.write("{}\n".format(vars(ast)))
+        #    #out_file.write('{\n')
+        #    #out_file.write('  "includes": [')
+        #    #prefix = ""
+        #    #for incl in header.includes:
+        #    #    out_file.write('{}\n    "{}"'.format(prefix, incl))
+        #    #    prefix = ","
+        #    #out_file.write(']\n')
+        #    #out_file.write("{}\n".format(vars(header)))
+        #    #for define in header.defines:
+        #    #    out_file.write("   {}\n".format(define))
+        #    #for func in header.functions:
+        #    #    out_file.write("   {}\n".format(func["name"]))
+        #    out_file.write('}\n')
         return True
 
 
@@ -140,11 +159,11 @@ def main():
         ])
 
     out_dir = os.path.join(SCRIPT_DIR, "out")
-    if os.path.exists(out_dir):
-        print("rmtree {}".format(out_dir))
-        shutil.rmtree(out_dir)
-    print("mkdir {}".format(out_dir))
-    os.mkdir(out_dir)
+    #if os.path.exists(out_dir):
+    #    print("rmtree {}".format(out_dir))
+    #    shutil.rmtree(out_dir)
+    #print("mkdir {}".format(out_dir))
+    #os.mkdir(out_dir)
     generator = JsonGenerator(out_dir)
     generator.include_dirs.append(shared_path)
     generator.include_dirs.append(user_mode_path)
