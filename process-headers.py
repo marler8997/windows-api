@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import sys
 import os
+import shutil
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,6 +45,53 @@ def parseHeadersIn(dir, exclude):
             except RecursionError as re:
                 print("PARSEERROR: {}".format(entry_basename))
 
+class JsonGenerator:
+    def __init__(self, out_dir):
+        self.out_dir = out_dir
+        self.include_dirs = []
+        self.include_map = {}
+
+    def findInclude(self, include):
+        # TODO: instead of just accepting the first match, should we support an option to
+        #       find all matches and error if there are multiple matches?
+        for dir in self.include_dirs:
+            filename = os.path.join(dir, include)
+            if os.path.exists(filename):
+                return filename
+                return filename
+
+        print("Error: failed to find include '{}' in the following dirs:".format(include))
+        for dir in self.include_dirs:
+            print("  {}".format(dir))
+        sys.exit(1)
+
+    def generate(self, include):
+        if include in self.include_map:
+            # already generated
+            return False
+
+        filename = self.findInclude(include)
+        self.include_map = filename
+
+        header = CppHeaderParser.CppHeader(filename)
+        with open(os.path.join(self.out_dir, include + ".json"), "w") as out_file:
+            out_file.write("{}\n".format(vars(header)))
+            out_file.write('{\n')
+            out_file.write('  "includes": [')
+            prefix = ""
+            for incl in header.includes:
+                out_file.write('{}\n    "{}"'.format(prefix, incl))
+                prefix = ","
+            out_file.write(']\n')
+            #out_file.write("{}\n".format(vars(header)))
+            #for define in header.defines:
+            #    out_file.write("   {}\n".format(define))
+            #for func in header.functions:
+            #    out_file.write("   {}\n".format(func["name"]))
+            out_file.write('}\n')
+        return True
+
+
 def main():
 
     # just hardcode path to get started
@@ -58,11 +106,13 @@ def main():
     # um - user mode? the standard user mode windows headers (like windows.h)
     # km - kernel mode?
     # winrt - windows rt api (windows store)
-    process_shared_headers = True
-    process_user_mode_headers = True
+    process_shared_headers = False
+    process_user_mode_headers = False
+
+    shared_path = os.path.join(windows_include_path, "shared")
+    user_mode_path = os.path.join(windows_include_path, "um")
 
     if process_shared_headers:
-        shared_path = os.path.join(windows_include_path, "shared")
         if not os.path.exists(shared_path):
             sys.exit("Error: windows include dir is missing the 'shared' subdirectory: {}".format(shared_path))
         parseHeadersIn(shared_path, ["apdevpkey.h", "clfs.h", "devpkey.h", "devpropdef.h", "hidclass.h", "ifdef.h",
@@ -73,7 +123,6 @@ def main():
         ])
 
     if process_user_mode_headers:
-        user_mode_path = os.path.join(windows_include_path, "um")
         if not os.path.exists(user_mode_path):
             sys.exit("Error: windows include dir is missing the 'um' subdirectory: {}".format(user_mode_path))
         parseHeadersIn(user_mode_path, ["advpub.h", "anchorsyncdeviceservice.h", "atlthunk.h",
@@ -90,8 +139,16 @@ def main():
             "mmdeviceapi.h","mmiscapi.h", "MspAddr.h",
         ])
 
-    #windows_header = os.path.join(windows_include_path, "um", "windows.h")
-    #parseHeader(windows_header)
+    out_dir = os.path.join(SCRIPT_DIR, "out")
+    if os.path.exists(out_dir):
+        print("rmtree {}".format(out_dir))
+        shutil.rmtree(out_dir)
+    print("mkdir {}".format(out_dir))
+    os.mkdir(out_dir)
+    generator = JsonGenerator(out_dir)
+    generator.include_dirs.append(shared_path)
+    generator.include_dirs.append(user_mode_path)
 
+    generator.generate("windows.h")
 
 main()
