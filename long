@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -ex
+mkdir -p out
+./go include > out/include
+./go 10.0.17763.0/shared > out/shared
+./go 10.0.17763.0/um > out/um
+echo Success
