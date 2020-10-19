@@ -6,14 +6,11 @@ import shutil
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # TODO: verify these paths exist, print nice error if they don't
-PCPP_PATH      = os.path.join(SCRIPT_DIR, "deps", "pcpp-1.21")
-PYCPARSER_PATH = os.path.join(SCRIPT_DIR, "deps", "pycparser-2.20")
+CTYPESGEN_PATH = os.path.join(SCRIPT_DIR, "deps", "ctypesgen")
 
-sys.path.insert(0, PCPP_PATH)
-sys.path.insert(0, PYCPARSER_PATH)
+sys.path.insert(0, CTYPESGEN_PATH)
 
-import pcpp
-import pycparser
+import ctypesgen
 
 def parseHeader(header_filename):
     print("{}".format(header_filename))
@@ -45,16 +42,6 @@ def parseHeadersIn(dir, exclude):
                 print("PARSEERROR: {}".format(entry_basename))
             except RecursionError as re:
                 print("PARSEERROR: {}".format(entry_basename))
-
-
-class CustomPreprocessor(pcpp.Preprocessor):
-    def __init__(self):
-        pcpp.Preprocessor.__init__(self)
-    def on_directive_handle(self, directive, toks, ifpassthru, precedingtoks):
-        pcpp.Preprocessor.on_directive_handle(self, directive, toks, ifpassthru, precedingtoks)
-        #print("CustomPreprocessor: on_directive_handle '{}'".format(directive))
-        if directive.value == "include":
-            print("TODO: handle include '{}'".format(''.join([t.value for t in toks])))
 
 class JsonGenerator:
     def __init__(self, out_dir):
@@ -92,9 +79,16 @@ class JsonGenerator:
         preprocessed_file = os.path.join(self.out_dir, include + ".preprocessed")
         #with open(preprocessed_file, "w") as file:
         #    preprocessor.write(file)
-        ast = pycparser.parse_file(preprocessed_file)
+
+        use_python_preprocessor = True
+        if use_python_preprocessor:
+            ast = pycparser.parse_file(preprocessed_file)
+        else:
+            ast = pycparser.parse_file(preprocessed_file, use_cpp=True, cpp_path="clang", cpp_args=["-E"])
+
         with open(os.path.join(self.out_dir, include + ".json"), "w") as out_file:
-            out_file.write("{}\n".format(vars(ast)))
+            out_file.write("{}\n".format(ast))
+            #out_file.write("{}\n".format(vars(ast)))
         #    #out_file.write('{\n')
         #    #out_file.write('  "includes": [')
         #    #prefix = ""
