@@ -231,7 +231,25 @@ def test_headers_in(include_dirs, dir, file_limit, **kwargs):
         process_file(include_dirs, os.path.join(dir, entry), **kwargs)
         file_count += 1
 
+
+def testPreprocess(src):
+    import inspect
+    filename = "{}:{}".format(__file__, inspect.currentframe().f_back.f_lineno)
+    nodes = process_text(None, filename, src)
+
+def runTests():
+    testPreprocess('#if a\n#endif')
+    #testPreprocess('#if (a)\n#endif')
+    testPreprocess('#if a && b\n#endif')
+    testPreprocess('#if a && b\n#endif')
+    testPreprocess('#if a && b && c\n#endif')
+    testPreprocess('#if defined a\n#endif')
+    testPreprocess('#if defined(a)\n#endif')
+    testPreprocess('#if defined(a) && b\n#endif')
+    #testPreprocess('#if defined (_MSC_VER) && (_MSC_VER >= 1020)')
+
 def main():
+    runTests()
     include_dirs = [
         "include",
         "10.0.17763.0/shared",

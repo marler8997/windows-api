@@ -206,7 +206,7 @@ class Parser:
         at_eof, tokens = self.scanTokensTo(preprocesslex.NEWLINE_OR_COMMENT, False)
         if len(tokens) == 0:
             raise self.errAt(if_token, "#if requires an expression")
-        return IfNode(if_token, tokens, self.parseConstExpression(tokens))
+        return IfNode(if_token, tokens, self.parseCompleteExpression(tokens))
 
     def parseEndifDirective(self, id_token):
         # some windows #endif directives contain tokens, just going to ignore them
@@ -287,23 +287,23 @@ class Parser:
     #   - macros
     #   - the 'defined' operator
     #   - Identifiers that are not macros, which are all considered to be the number zero. This allows you to write #if MACRO instead of #ifdef MACRO, if you know that MACRO, when defined, will always have a nonzero value. Function-like macros used without their function call parentheses are also treated as zero.
-    def parseConstExpression(self, tokens):
+    def parseCompleteExpression(self, tokens):
         assert(len(tokens) > 0)
         # TODO: support parseConditionalExpression?
-        expr, tokens_left = self.parseBinaryExpression(tokens)
-        if tokens_left:
-            raise self.errAt(tokens_left[0], "extra tokens after full expression was parsed")
+        expr, tokens = self.parseExpression(tokens)
+        if tokens:
+            raise self.errAt(tokens[0], "extra tokens after full expression was parsed")
         return expr
     def parseBinaryOp(self, tokens, token_kinds, ExprClass, next_func):
-        expr, tokens_left = next_func(tokens)
-        if (not tokens_left) or  (not (tokens_left[0].kind in token_kinds)):
-            return expr, tokens_left
-        op_token = tokens_left[0]
-        tokens_left = tokens_left[1:]
-        if len(tokens_left) == 0:
+        expr, tokens = next_func(tokens)
+        if (not tokens) or  (not (tokens[0].kind in token_kinds)):
+            return expr, tokens
+        op_token = tokens[0]
+        tokens = tokens[1:]
+        if len(tokens) == 0:
             raise self.errAt(op_token, "missing expression after '{}'".format(self.str[op_token.start:op_token.end]))
-        return ExprClass(op_token, expr, self.parseConstExpression(tokens_left)), None
-    def parseBinaryExpression(self, tokens):
+        return ExprClass(op_token, expr, self.parseCompleteExpression(tokens)), None
+    def parseExpression(self, tokens):
         return self.parseLogicalOrExpression(tokens)
     # TODO: turn these binary op functions into a single function with a loop?
     def parseLogicalOrExpression(self, tokens):
@@ -360,8 +360,8 @@ class Parser:
             tokens = tokens[1:]
             if len(tokens) == 0:
                 raise self.errAt(op_token, "expected an expression after '{}'".format(self.str[op_token.start:op_token.end]))
-            expr, tokens_left = self.parseUnaryExpression(tokens)
-            return UnaryExpression(op_token, expr), tokens_left
+            expr, tokens = self.parseUnaryExpression(tokens)
+            return UnaryExpression(op_token, expr), tokens
         if next_token.kind in [
                 preprocesslex.BITWISE_AND,
                 preprocesslex.STAR,
@@ -374,8 +374,8 @@ class Parser:
             tokens = tokens[1:]
             if len(tokens) == 0:
                 raise self.errAt(op_token, "expected an expression after '{}'".format(self.str[op_token.start:op_token.end]))
-            expr, tokens_left = self.parseCastExpression(tokens)
-            return UnaryExpression(op_token, expr), tokens_left
+            expr, tokens = self.parseCastExpression(tokens)
+            return UnaryExpression(op_token, expr), tokens
 
         if next_token.kind == preprocesslex.ID and next_token_str == "sizeof":
             raise self.errAt(next_token, "sizeof not implemented")
@@ -452,11 +452,11 @@ class Parser:
             tokens = tokens[1:]
             if len(tokens) == 0:
                 raise self.errAt(next_token, "expected expressiona after '('")
-            expr, tokens = self.parseBinaryExpression(tokens)
+            expr, tokens = self.parseExpression(tokens)
             if not tokens:
                 raise self.errAt(next_token, "missing closing paren ')'")
             if tokens[0].kind != preprocesslex.RIGHT_PAREN:
-                raise self.errAt(next_token, "expected ')' but got '{}'".format(self.str[tokens[0].start:tokens[0].end]))
+                raise self.errAt(tokens[0], "expected ')' but got '{}'".format(self.str[tokens[0].start:tokens[0].end]))
             return expr, tokens[1:]
 
         raise self.errAt(next_token, "unexpected token in primary expression: {}".format(next_token.desc(self.str)))
