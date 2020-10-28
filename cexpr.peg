@@ -204,8 +204,9 @@ Expression = AssignmentExpression (COMMA AssignmentExpression)*
 PrimaryExpression = StringLiteral / Constant / PreprocessorDefined / Identifier / ( LPAR Expression RPAR )
 
 # I've added this PreprocessorDefined rule so I can use this grammar to parse preprocessor "#if" expressions
-PreprocessorDefined = DEFINED Identifier
+PreprocessorDefined = (DEFINED LPAR DefinedArg RPAR) / (DEFINED DefinedArg)
 DEFINED = "defined" !IdChar Spacing
+DefinedArg = (Keyword Spacing) / Identifier
 
 #
 #PostfixExpression
@@ -408,14 +409,10 @@ HexDigit = ~"[a-fA-F0-9]"
 #IntegerSuffix
 #   <- [uU] Lsuffix?
 #    / Lsuffix [uU]?
-IntegerSuffix = (~"[uU]" Lsuffix) / (Lsuffix ~"[uU]")
+IntegerSuffix = (Usuffix Lsuffix?) / (Lsuffix Usuffix?)
 
-#
-#Lsuffix
-#   <- 'll'
-#    / 'LL'
-#    / [lL]
-Lsuffix = "ll" / "LL" / "lL"
+Usuffix = ~"[uU]"
+Lsuffix = "ll" / "LL" / ~"[lL]"
 
 #
 #FloatConstant

@@ -288,6 +288,24 @@ class Parser:
     #   - the 'defined' operator
     #   - Identifiers that are not macros, which are all considered to be the number zero. This allows you to write #if MACRO instead of #ifdef MACRO, if you know that MACRO, when defined, will always have a nonzero value. Function-like macros used without their function call parentheses are also treated as zero.
     def parseCompleteExpression(self, tokens):
+        # TODO: try to parse using peg
+        #self.parseCompleteExpressionCustom(tokens)
+        self.parseCompleteExpressionPeg(tokens)
+    def parseCompleteExpressionPeg(self, tokens):
+        import parsimoniousdeps
+        import parsimonious
+        import cexpr
+        assert(len(tokens) > 0)
+        #expr_src = self.str[tokens[0].start:tokens[-1].end]
+        expr_src = " ".join([self.str[t.start:t.end] for t in tokens])
+        #print("tokens: {}".format(tokens))
+        print("[DEBUG] parsing '{}'".format(expr_src))
+        try:
+            expr_node = cexpr.GRAMMAR.parse(expr_src)
+        except parsimonious.exceptions.ParseError as e:
+            raise self.errAt(tokens[0], "expression parse failed: {}".format(e))
+        return NotImplementedExpression()
+    def parseCompleteExpressionCustom(self, tokens):
         assert(len(tokens) > 0)
         # TODO: support parseConditionalExpression?
         expr, tokens = self.parseExpression(tokens)

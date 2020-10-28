@@ -154,7 +154,7 @@ class Lexer:
                 if c == ord(";"):
                     return popSingleCharToken(self.reader, SEMICOLON)
                 if c == ord('='):
-                    return popSingleOrDoubleCharToken(self.reader, EQUAL, '=', DOUBLE_EQUAL)
+                    return popSingleOrDoubleCharToken(self.reader, EQUAL, ord('='), DOUBLE_EQUAL)
                 if c == ord('<'):
                     return popSingleOrDoubleCharToken(self.reader, LESS_THAN, ord('='), LESS_THAN_EQ)
                 if c == ord('>'):
@@ -333,19 +333,41 @@ def lexId(reader):
 
 def lexNumber(reader):
     start = reader.getPosition()
-    scanWhile(reader, isNumberChar)
+    c = reader.peek()
+    if c != ord('0'):
+        scanWhile(reader, isDecimalChar)
+    else:
+        reader.pop()
+        if not reader.atEof():
+            c = reader.peek()
+            if c == ord("x") or c == ord("X"):
+                scanWhile(reader, isHexChar)
+            elif isOctalChar(c):
+                scanWhile(reader, isOctalChar)
 
     # parse number postfix
-    c = reader.peek()
-    if c == ord('L'):
-        reader.pop()
+    if not reader.atEof():
+        c = reader.peek()
+        if c == ord('L'):
+            reader.pop()
 
     end = reader.getPosition()
     #return NumberToken(start, end, int(reader.str[start:end]))
     return Token(NUMBER, start, end)
 
+def isOctalChar(c):
+    return c >= ord('0') and c <= ord('7')
+def isDecimalChar(c):
+    return c >= ord('0') and c <= ord('9')
+def isHexChar(c):
+    if c <= ord('9'):
+        return c >= ord('0')
+    if c >= ord('a'):
+        return c <= ord('f')
+    return c <= ord('F') and c >= ord('A')
+
 def isNumberChar(c):
-    return (c >= ord('0') and c <= ord('9')) or c == ord('x')
+    return (c >= ord('0') and c <= ord('9')) or (c >= 'A' and c <= 'F') or c == ord('x') or c == ord('X')
 
 def isIdNonFirstChar(c):
     if c >= ord('a'):

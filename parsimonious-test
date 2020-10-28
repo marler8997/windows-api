@@ -203,8 +203,13 @@ class CExpVisitor:
     def visitConstant(self, node):
         print("visit Constant: {}".format(node.text))
     def visitPreprocessorDefined(self, node):
-        # PreprocessorDefined = DEFINED Identifier
-        verifyChildren(node, "DEFINED", "Identifier")
+        # PreprocessorDefined = (DEFINED LPAR DefinedArg RPAR) / (DEFINED DefinedArg)
+        verifyChildren(node, None)
+        node = node.children[0]
+        if node.children[1].expr_name == "DefinedArg":
+            verifyChildren(node, "DEFINED", "DefinedArg")
+        else:
+            verifyChildren(node, "DEFINED", "LPAR", "DefinedArg", "RPAR")
 
 data = """
 a;
@@ -239,6 +244,10 @@ L"hello"
 "\ua018"
 "\U1234beef"
 defined foo
+defined(bar)
+defined(auto)
+defined auto
+defined ( auto )
 """.splitlines()
 
 def testExpr(expr):

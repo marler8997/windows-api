@@ -231,6 +231,22 @@ def test_headers_in(include_dirs, dir, file_limit, **kwargs):
         process_file(include_dirs, os.path.join(dir, entry), **kwargs)
         file_count += 1
 
+def testLex(src, *expected):
+    import inspect
+    filename = "{}:{}".format(__file__, inspect.currentframe().f_back.f_lineno)
+    lexer = preprocesslex.Lexer(stringreader.StringReader(src, filename))
+    i = 0
+    while True:
+        token = lexer.lexToken()
+        if token.kind == preprocesslex.EOF:
+            if i < len(expected):
+                raise Exception("missing token '{}'".format(expected[i]))
+            break
+        if i >= len(expected):
+            raise Exception("got extra token '{}'".format(token))
+        if token.kind != expected[i]:
+            raise Exception("expected token '{}' but got '{}'".format(expected[i], token.kind))
+        i += 1
 
 def testPreprocess(src):
     import inspect
@@ -238,6 +254,10 @@ def testPreprocess(src):
     nodes = process_text(None, filename, src)
 
 def runTests():
+    testLex("0", preprocesslex.NUMBER)
+    testLex("0xE", preprocesslex.NUMBER)
+    testLex("0123", preprocesslex.NUMBER)
+    testLex("201703L", preprocesslex.NUMBER)
     testPreprocess('#if a\n#endif')
     #testPreprocess('#if (a)\n#endif')
     testPreprocess('#if a && b\n#endif')
@@ -246,7 +266,7 @@ def runTests():
     testPreprocess('#if defined a\n#endif')
     testPreprocess('#if defined(a)\n#endif')
     testPreprocess('#if defined(a) && b\n#endif')
-    #testPreprocess('#if defined (_MSC_VER) && (_MSC_VER >= 1020)')
+    testPreprocess('#if defined(auto)\n#endif')
 
 def main():
     runTests()
