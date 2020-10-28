@@ -294,66 +294,62 @@ class Parser:
         except parsimonious.exceptions.ParseError as e:
             raise self.errAt(tokens[0], "expression parse failed: {}".format(e))
         visitor = ToExpressionVisitor()
-        visitor.visit(expr_node)
-        return NotImplementedExpression()
+        expr = visitor.visit(expr_node)
+        assert(expr)
+        #expr.eval(None)
+        return expr
 
 class Expression:
-    pass
+    def eval(self, state):
+        #raise Exception("{}.eval not implemented".format(type(self).__name__))
+        print("TODO: {}.eval not implemented".format(type(self).__name__))
+        return 0
 class BinaryExpression(Expression):
     def __init__(self, op_token, expr1, expr2):
         self.op_token = op_token
         self.expr1 = expr1
         self.expr2 = expr2
-class LogicalOrExpression(BinaryExpression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class LogicalAndExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class BitwiseOrExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class ExclusiveOrExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class BitwiseAndExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class EqualityExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class RelationalExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class ShiftExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class AdditiveExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
-class MultiplicativeExpression(Expression):
-    def __init__(self, op_token, expr1, expr2):
-        BinaryExpression.__init__(self, op_token, expr1, expr2)
 class UnaryExpression(Expression):
     def __init__(self, op_token, expr):
         self.op_token = op_token
         self.expr = expr
-class NotImplementedExpression(Expression):
-    pass
+class CallExpression(Expression):
+    def __init__(self, func_expr, args):
+        self.func_expr = func_expr
+        self.args = args
+class IndexExpression(Expression):
+    def __init__(self, array_expr, index_expr):
+        self.array_expr = array_expr
+        self.index_expr = index_expr
+class DotMemberExpression(Expression):
+    def __init__(self, obj_expr, member):
+        self.obj_expr = obj_expr
+        self.member = member
+class PtrMemberExpression(Expression):
+    def __init__(self, obj_expr, member):
+        self.obj_expr = obj_expr
+        self.member = member
 class NumberExpression(Expression):
     def __init__(self, number_token):
         self.number_token = number_token
 class StringExpression(Expression):
-    def __init__(self, string_token):
-        self.string_token = string_token
-class MacroSymbolExpression(Expression):
-    def __init__(self, id_token, id):
-        self.id_token = id_token
+    def __init__(self, string_node, value):
+        self.string_node = string_node
+        self.value = value
+class IdentifierExpression(Expression):
+    def __init__(self, id_node, id):
+        self.id_node = id_node
         self.id = id
 class DefinedExpression(Expression):
-    def __init__(self, define_token, expr):
-        self.define_token = define_token
-        self.expr = expr
+    def __init__(self, id_node, id):
+        self.id_node = id_node
+        self.id = id
+    def eval(self, state):
+        return 1 if state.condition.get_is_defined(self.id) else 0
+class ConstantExpression(Expression):
+    def __init__(self, node, string_value):
+        self.node = node
+        self.string_value = string_value
 
 def isEmpty(node):
     return node.start == node.end
@@ -374,53 +370,59 @@ class ToExpressionVisitor:
 
     def visitExpression(self, node):
         verifyChildren(node, "AssignmentExpression", None)
-        self.visit(node.children[0])
+        expr = self.visit(node.children[0])
         if not isEmpty(node.children[1]):
             sys.exit("not impl")
+        return expr
     def visitAssignmentExpression(self, node):
         if node.children[0].expr_name == "ConditionalExpression":
             verifyChildren(node, "ConditionalExpression")
-            self.visit(node.children[0])
+            return self.visit(node.children[0])
         else:
             sys.exit("not impl assign expr")
     def visitConditionalExpression(self, node):
         verifyChildren(node, "LogicalORExpression", None)
-        self.visit(node.children[0])
+        expr = self.visit(node.children[0])
         if not isEmpty(node.children[1]):
             sys.exit("not impl conditional expr")
+        return expr
 
     def visitBinaryExpression(self, node, op_expr_names, next_expr_name):
         # SomeBinaryExpression = NextBinaryExpression (OP NextBinaryExpression)*
         verifyChildren(node, next_expr_name, None)
-        self.visit(node.children[0])
+        expr = self.visit(node.children[0])
         node = node.children[1]
         for node in node.children:
-            verify_op_name = None if (len(op_expr_names) != 1) else op_expr_names[0]
-            verifyChildren(node, verify_op_name, next_expr_name)
-            if not verify_op_name:
+            verifyChildren(node, None, next_expr_name)
+            if len(op_expr_names) == 1:
+                op_node = node.children[0]
+            else:
                 verifyChildren(node.children[0], None)
-                assert(node.children[0].children[0].expr_name in op_expr_names)
-            self.visit(node.children[1])
+                op_node = node.children[0].children[0]
+            assert(op_node.expr_name in op_expr_names)
+            next_expr = self.visit(node.children[1])
+            expr = BinaryExpression(op_node, expr, next_expr)
+        return expr
     def visitLogicalORExpression(self, node):
-        self.visitBinaryExpression(node, ("OROR",), "LogicalANDExpression")
+        return self.visitBinaryExpression(node, ("OROR",), "LogicalANDExpression")
     def visitLogicalANDExpression(self, node):
-        self.visitBinaryExpression(node, ("ANDAND",), "InclusiveORExpression")
+        return self.visitBinaryExpression(node, ("ANDAND",), "InclusiveORExpression")
     def visitInclusiveORExpression(self, node):
-        self.visitBinaryExpression(node, ("OR",), "ExclusiveORExpression")
+        return self.visitBinaryExpression(node, ("OR",), "ExclusiveORExpression")
     def visitExclusiveORExpression(self, node):
-        self.visitBinaryExpression(node, ("HAT",), "ANDExpression")
+        return self.visitBinaryExpression(node, ("HAT",), "ANDExpression")
     def visitANDExpression(self, node):
-        self.visitBinaryExpression(node, ("AND",), "EqualityExpression")
+        return self.visitBinaryExpression(node, ("AND",), "EqualityExpression")
     def visitEqualityExpression(self, node):
-        self.visitBinaryExpression(node, ("EQUEQU","BANGEQU"), "RelationalExpression")
+        return self.visitBinaryExpression(node, ("EQUEQU","BANGEQU"), "RelationalExpression")
     def visitRelationalExpression(self, node):
-        self.visitBinaryExpression(node, ("LE", "GE", "LT", "GT"), "ShiftExpression")
+        return self.visitBinaryExpression(node, ("LE", "GE", "LT", "GT"), "ShiftExpression")
     def visitShiftExpression(self, node):
-        self.visitBinaryExpression(node, ("LEFT", "RIGHT"), "AdditiveExpression")
+        return self.visitBinaryExpression(node, ("LEFT", "RIGHT"), "AdditiveExpression")
     def visitAdditiveExpression(self, node):
-        self.visitBinaryExpression(node, ("PLUS", "MINUS"), "MultiplicativeExpression")
+        return self.visitBinaryExpression(node, ("PLUS", "MINUS"), "MultiplicativeExpression")
     def visitMultiplicativeExpression(self, node):
-        self.visitBinaryExpression(node, ("STAR", "DIV", "MOD"), "CastExpression")
+        return self.visitBinaryExpression(node, ("STAR", "DIV", "MOD"), "CastExpression")
 
     def visitUnaryExpression(self, node):
         # TODO: support sizeof?
@@ -428,26 +430,24 @@ class ToExpressionVisitor:
         verifyChildren(node, None)
         node = node.children[0]
         if node.expr_name == "PostfixExpression":
-            self.visit(node)
-        else:
-            assert(not node.expr_name)
-            first = node.children[0]
-            if first.expr_name == "INC":
-                verifyChildren(node, "INC", "UnaryExpression")
-                print("INC")
-                self.visit(node.children[1])
-            elif first.expr_name == "DEC":
-                verifyChildren(node, "DEC", "UnaryExpression")
-                print("DEC")
-                self.visit(node.children[1])
-            elif first.expr_name == "UnaryOperator":
-                verifyChildren(node, "UnaryOperator", "CastExpression")
-                print("Unary({})".format(node.children[0].text))
-                self.visit(node.children[1])
+            return self.visit(node)
+
+        assert(not node.expr_name)
+        first = node.children[0]
+        if first.expr_name == "INC":
+            verifyChildren(node, "INC", "UnaryExpression")
+            return UnaryExpression(node.children[0], self.visit(node.children[1]))
+        if first.expr_name == "DEC":
+            verifyChildren(node, "DEC", "UnaryExpression")
+            return UnaryExpression(node.children[0], self.visit(node.children[1]))
+        if first.expr_name == "UnaryOperator":
+            verifyChildren(node, "UnaryOperator", "CastExpression")
+            return UnaryExpression(node.children[0], self.visit(node.children[1]))
+        assert(False)
 
     def visitCastExpression(self, node):
         verifyChildren(node, "UnaryExpression")
-        self.visit(node.children[0])
+        return self.visit(node.children[0])
 
     def visitPostfixExpression(self, node):
         '''
@@ -461,75 +461,76 @@ class ToExpressionVisitor:
         )*
         '''
         verifyChildren(node, "PrimaryExpression", None)
-        self.visit(node.children[0])
-        postfixes = node.children[1]
-        for postfix in postfixes.children:
-            first = postfix.children[0]
-            if first.expr_name == "INC":
-                verifyChildren(postfix, "INC")
-                print("INC")
-                #self.visit(postfix)
-            elif first.expr_name == "DEC":
-                verifyChildren(postfix, "DEC")
-                print("DEC")
-                #self.visit(postfix)
-            else:
-                assert(not postfix.expr_name)
-                verifyChildren(postfix, None)
-                postfix = postfix.children[0]
-                first = postfix.children[0]
-                if first.expr_name == "LBRK":
-                    verifyChildren(postfix, "LBRK", "Expression", "RBRK")
-                    self.visit(postfix.children[1])
-                elif first.expr_name == "LPAR":
-                    verifyChildren(postfix, "LPAR", None, "RPAR")
-                    args_optional = postfix.children[1]
-                    if len(args_optional.children) == 0:
-                        pass
-                    else:
-                        verifyChildren(args_optional, "ArgumentExpressionList")
-                        self.visit(args_optional.children[0])
-                elif first.expr_name == "DOT":
-                    verifyChildren(postfix, "DOT", "Identifier")
-                elif first.expr_name == "PTR":
-                    verifyChildren(postfix, "PTR", "Identifier")
-                # TODO: handle the function call case
-                else:
-                    assert(False)
+        expr = self.visit(node.children[0])
+        node = node.children[1]
+        for node in node.children:
+            first = node.children[0]
+            if first.expr_name == "INC" or first.expr_name == "DEC":
+                verifyChildren(node, None)
+                expr = UnaryExpression(node, expr)
+                continue
 
-    def visitArgumentExpressionList(self, node):
+            assert(not node.expr_name)
+            verifyChildren(node, None)
+            node = node.children[0]
+            first = node.children[0]
+            if first.expr_name == "LBRK":
+                verifyChildren(node, "LBRK", "Expression", "RBRK")
+                expr = IndexExpression(expr, self.visit(node.children[1]))
+            elif first.expr_name == "LPAR":
+                verifyChildren(node, "LPAR", None, "RPAR")
+                args_optional = node.children[1]
+                if len(args_optional.children) == 0:
+                    expr = CallExpression(expr, [])
+                else:
+                    verifyChildren(args_optional, "ArgumentExpressionList")
+                    expr = CallExpression(expr, self.parseArgumentExpressionList(args_optional.children[0]))
+            elif first.expr_name == "DOT":
+                verifyChildren(node, "DOT", "Identifier")
+                expr = DotMemberExpression(expr, node.children[1])
+            elif first.expr_name == "PTR":
+                verifyChildren(node, "PTR", "Identifier")
+                expr = PtrMemberExpression(expr, node.children[1])
+            else:
+                assert(False)
+        return expr
+
+    def parseArgumentExpressionList(self, node):
         # ArgumentExpressionList = AssignmentExpression (COMMA AssignmentExpression)*
         verifyChildren(node, "AssignmentExpression", None)
-        self.visit(node.children[0])
+        args = [self.visit(node.children[0])]
         node = node.children[1]
         for arg in node.children:
             verifyChildren(arg, "COMMA", "AssignmentExpression")
-            self.visit(arg.children[1])
+            args.append(self.visit(arg.children[1]))
+        return args
 
     def visitPrimaryExpression(self, node):
         # PrimaryExpression = StringLiteral / Constant / Identifier / ( LPAR Expression RPAR )
         verifyChildren(node, None)
         node = node.children[0]
         if node.expr_name in ["StringLiteral", "Constant", "PreprocessorDefined", "Identifier"]:
-            self.visit(node)
+            return self.visit(node)
         else:
             verifyChildren(node, "LPAR", "Expression", "RPAR")
-            self.visit(node.children[1])
+            return self.visit(node.children[1])
     def visitStringLiteral(self, node):
-        s = toProcessedString(node)
-        print("visit StringLiteral: {}".format(s))
+        value = toProcessedString(node)
+        return StringExpression(node, value)
     def visitIdentifier(self, node):
         # Identifier = !Keyword IdNondigit IdChar* Spacing
         verifyChildren(node, None, "IdNondigit", None, "Spacing")
         id = node.children[1].text + node.children[2].text
-        print("visit Identifier: {}".format(id))
+        return IdentifierExpression(node, id)
     def visitConstant(self, node):
-        print("visit Constant: {}".format(node.text))
+        return ConstantExpression(node, node.text)
     def visitPreprocessorDefined(self, node):
         # PreprocessorDefined = (DEFINED LPAR DefinedArg RPAR) / (DEFINED DefinedArg)
         verifyChildren(node, None)
         node = node.children[0]
         if node.children[1].expr_name == "DefinedArg":
             verifyChildren(node, "DEFINED", "DefinedArg")
+            return DefinedExpression(node.children[1], node.children[1].text)
         else:
             verifyChildren(node, "DEFINED", "LPAR", "DefinedArg", "RPAR")
+            return DefinedExpression(node.children[2], node.children[2].text)

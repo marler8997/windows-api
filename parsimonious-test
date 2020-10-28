@@ -121,6 +121,8 @@ class CExpVisitor:
                 verifyChildren(node, "UnaryOperator", "CastExpression")
                 print("Unary({})".format(node.children[0].text))
                 self.visit(node.children[1])
+            else:
+                assert(False)
 
     def visitCastExpression(self, node):
         verifyChildren(node, "UnaryExpression")
@@ -170,7 +172,6 @@ class CExpVisitor:
                     verifyChildren(postfix, "DOT", "Identifier")
                 elif first.expr_name == "PTR":
                     verifyChildren(postfix, "PTR", "Identifier")
-                # TODO: handle the function call case
                 else:
                     assert(False)
 

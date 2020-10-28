@@ -166,14 +166,15 @@ class Preprocessor:
                     enable_block = (not is_defined) if node.is_not else is_defined
                 self.pushNode(node, enable_block)
             elif isinstance(node, preprocessparse.IfNode):
-                self.printPrefix()
-                print("if {} '{}'".format(type(node.expression_node).__name__,
-                                          " ".join([self.file_data.src[t.start:t.end] for t in node.condition_tokens])))
                 if not self.condition.enabled:
-                    enable_block = False
+                    if_result = 0
                 else:
-                    # TODO: implement logic to calculate enable_block
-                    enable_block = False
+                    if_result = node.expression_node.eval(self)
+                    assert(isinstance(if_result, int))
+                enable_block = (if_result != 0)
+                self.printPrefix()
+                print("if {} '{}' (result={})".format(type(node.expression_node).__name__,
+                                               " ".join([self.file_data.src[t.start:t.end] for t in node.condition_tokens]), if_result))
                 self.pushNode(node, enable_block)
             elif isinstance(node, preprocessparse.EndifNode):
                 cond = self.popNode()
