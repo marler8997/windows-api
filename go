@@ -22,6 +22,7 @@ import errors
 import stringreader
 import preprocesslex
 import preprocessparse
+from preprocessanalyze import DefineStateKind, DefineState
 
 def findFileIgnoreCase(path, parts):
     #print("findFileIgnoreCase '{}' {}".format(path, parts))
@@ -61,16 +62,6 @@ def printIndent(count):
         count -= len(INDENT_STRING)
     print(INDENT_STRING[:count], end='')
 
-class DefineStateKind(Enum):
-    QUANTUM = 0
-    DEFINED = 1
-    NOT_DEFINED = 2
-class DefineState:
-    def __init__(self, id, kind, value):
-        self.id = id
-        self.kind = kind
-        self.value = value
-
 class Condition:
     def __init__(self, parent, depth, node, enabled):
         self.parent = parent
@@ -80,8 +71,9 @@ class Condition:
         self.define_states = {}
         self.handled_else = False
     def getDefineState(self, id):
-        if id in self.define_states:
-            return self.define_states[id]
+        state = self.define_states.get(id, None)
+        if state:
+            return state
         if self.depth == 0:
             return DefineState(id, DefineStateKind.QUANTUM, None)
         return self.parent.getDefineState(id)
@@ -93,6 +85,15 @@ class Condition:
             self.enabled = False
         else:
             self.enabled = self.parent.enabled
+    def dump(self):
+        if len(self.define_states) > 0:
+            print("-------------")
+            for id, state in self.define_states.items():
+                print("{}: {} '{}'".format(id, state.kind, state.value))
+        if self.depth != 0:
+            self.parent.dump()
+        else:
+            assert(self.parent == None)
 
 class PreprocessFileData:
     def __init__(self, filename, src, nodes):
@@ -129,6 +130,7 @@ class Preprocessor:
         self.addDefineState("_MAC", DefineStateKind.NOT_DEFINED, None)
         self.addDefineState("__RPC_MAC__", DefineStateKind.NOT_DEFINED, None)
         self.addDefineState("__ICL", DefineStateKind.NOT_DEFINED, None)
+
     def addDefineState(self, id, kind, value):
         self.condition.define_states[id] = DefineState(id, kind, value)
     def fileLocationAtToken(self, token):
@@ -219,11 +221,11 @@ class Preprocessor:
                     self.addDefineState(node.id, DefineStateKind.NOT_DEFINED if node.is_not else DefineStateKind.DEFINED, None)
             elif isinstance(node, preprocessparse.IfNode):
                 if not self.condition.enabled:
-                    if_result = 0
+                    if_result = preprocessparse.INTEGER_EVAL_0
                 else:
                     if_result = node.expression_node.eval(self)
-                    assert(isinstance(if_result, int))
-                enable_block = (if_result != 0)
+                    assert(isinstance(if_result, preprocessparse.EvalResult))
+                enable_block = if_result.isTrue()
                 self.printPrefix()
                 print("if {} '{}' (result={})".format(type(node.expression_node).__name__,
                                                " ".join([self.file_data.src[t.start:t.end] for t in node.condition_tokens]), if_result))

@@ -1,4 +1,5 @@
 import preprocesslex
+from preprocessanalyze import DefineStateKind, DefineState
 
 EOF = 0
 
@@ -299,11 +300,35 @@ class Parser:
         #expr.eval(None)
         return expr
 
+class EvalResult:
+    pass
+class QuantumEvalResult(EvalResult):
+    def isTrue(self):
+        return True
+    def __repr__(self):
+        return "QUANTUM"
+QUANTUM_EVAL_RESULT = QuantumEvalResult()
+class IntegerEvalResult(EvalResult):
+    def __init__(self, val):
+        self.val = val
+    def isTrue(self):
+        return self.val != 0
+    def __repr__(self):
+        return "{}".format(self.val)
+INTEGER_EVAL_0 = IntegerEvalResult(0)
+INTEGER_EVAL_1 = IntegerEvalResult(1)
+class NotImplementedResult(EvalResult):
+    def isTrue(self):
+        return False
+    def __repr__(self):
+        return "NotImplemented"
+NOT_IMPLEMENTED_RESULT = NotImplementedResult()
+
 class Expression:
-    def eval(self, state):
+    def eval(self, preprocessor):
         #raise Exception("{}.eval not implemented".format(type(self).__name__))
         print("TODO: {}.eval not implemented".format(type(self).__name__))
-        return 0
+        return NOT_IMPLEMENTED_RESULT
 class BinaryExpression(Expression):
     def __init__(self, op_token, expr1, expr2):
         self.op_token = op_token
@@ -344,8 +369,20 @@ class DefinedExpression(Expression):
     def __init__(self, id_node, id):
         self.id_node = id_node
         self.id = id
-    #def eval(self, state):
-    #    return 1 if state.condition.get_is_defined(self.id) else 0
+    def eval(self, preprocessor):
+        state = preprocessor.condition.getDefineState(self.id)
+        if state.kind == DefineStateKind.QUANTUM:
+            return QUANTUM_EVAL_RESULT
+        if state.kind == DefineStateKind.DEFINED:
+            return INTEGER_EVAL_1
+        assert(state.kind == DefineStateKind.NOT_DEFINED)
+        return INTEGER_EVAL_0
+class DefinedKeywordExpression(Expression):
+    def __init__(self, node):
+        self.node = node
+    def eval(self, preprocessor):
+        # all keywords are defined right?
+        return INTEGER_EVAL_1
 class ConstantExpression(Expression):
     def __init__(self, node, string_value):
         self.node = node
@@ -530,7 +567,21 @@ class ToExpressionVisitor:
         node = node.children[0]
         if node.children[1].expr_name == "DefinedArg":
             verifyChildren(node, "DEFINED", "DefinedArg")
-            return DefinedExpression(node.children[1], node.children[1].text)
+            return self.visitDefinedArg(node.children[1])
         else:
             verifyChildren(node, "DEFINED", "LPAR", "DefinedArg", "RPAR")
-            return DefinedExpression(node.children[2], node.children[2].text)
+            return self.visitDefinedArg(node.children[2])
+    def visitDefinedArg(self, node):
+        # DefinedArg = (Keyword Spacing) / Identifier
+        verifyChildren(node, None)
+        node = node.children[0]
+        if node.expr_name == "Identifier":
+            return DefinedExpression(node, identifierNodeToString(node))
+        else:
+            verifyChildren(node, "Keyword", "Spacing")
+            return DefinedKeywordExpression(node.children[0])
+
+def identifierNodeToString(node):
+    # Identifier = !Keyword IdNondigit IdChar* Spacing
+    verifyChildren(node, None, "IdNondigit", None, "Spacing")
+    return node.full_text[node.children[1].start:node.children[2].end]
