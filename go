@@ -13,6 +13,7 @@
 
 # C/C++ Grammar: https://docs.microsoft.com/en-us/cpp/parallel/openmp/c-openmp-c-and-cpp-grammar?view=vs-2019
 #
+from enum import Enum
 import os
 import sys
 import re
@@ -60,9 +61,15 @@ def printIndent(count):
         count -= len(INDENT_STRING)
     print(INDENT_STRING[:count], end='')
 
+class DefineStateKind(Enum):
+    QUANTUM = 0
+    DEFINED = 1
+    NOT_DEFINED = 2
 class DefineState:
-    def __init__(self, id):
+    def __init__(self, id, kind, value):
         self.id = id
+        self.kind = kind
+        self.value = value
 
 class Condition:
     def __init__(self, parent, depth, node, enabled):
@@ -70,26 +77,60 @@ class Condition:
         self.depth = depth
         self.node = node
         self.enabled = enabled
-        self.defines = {}
-    def get_is_defined(self, id):
-        if id in self.defines:
-            return True
+        self.define_states = {}
+        self.handled_else = False
+    def getDefineState(self, id):
+        if id in self.define_states:
+            return self.define_states[id]
         if self.depth == 0:
-            return False
-        return self.parent.get_is_defined(id)
+            return DefineState(id, DefineStateKind.QUANTUM, None)
+        return self.parent.getDefineState(id)
+    def handleElse(self):
+        if self.handled_else:
+            sys.exit("Error: hit multiple else's?")
+        self.handled_else = True
+        if self.enabled:
+            self.enabled = False
+        else:
+            self.enabled = self.parent.enabled
 
 class PreprocessFileData:
     def __init__(self, filename, src, nodes):
         self.filename = filename
         self.src = src
         self.nodes = nodes
-
+#
+# When it comes to "define identifiers", we care about is if it's state is
+# "determinable".  By default, all identifiers are in an undetermined state
+# which I call the "QUANTUM" state.  This means the processor needs to handle
+# all cases whether the identifier is defined as any value, or explicitly not defined.
+# However, there are cases where we do know what state an identifier is in, and those
+# cases must be handled differently.  One case where we MUST know the state of an
+# identifier is include guards, otherwise we could get into an infinite include loop.
+#
+# Here are some examples:
+#     - at the start, every "define identifier" is in the "QUANTUM" state (may or may not be defined)
+#     - if we see a "#define FOO", then FOO goes into the "DEFINED" state for that scope
+#     - if we see an "#undef FOO", then FOO goes into the "NOT_DEFINED" state for that scope
+#     - inside "#ifdef FOO", FOO is in the "DEFINED" state for that scope
+#     - inside "#ifndef FOO", FOO is in the "NOT_DEFINED" state for that scope
+#
 class Preprocessor:
     def __init__(self, include_dirs, filename, src, nodes, **kwargs):
         self.include_dirs = include_dirs
         self.file_data = PreprocessFileData(filename, src, nodes)
         self.ignore_includes =  kwargs.get('ignore_includes', False)
         self.condition = Condition(None, 0, None, True)
+        #
+        # add some defines that don't work because of missing header files
+        #
+        self.addDefineState("_WIN32", DefineStateKind.DEFINED, None)
+        self.addDefineState("_CONTRACT_GEN", DefineStateKind.NOT_DEFINED, None)
+        self.addDefineState("_MAC", DefineStateKind.NOT_DEFINED, None)
+        self.addDefineState("__RPC_MAC__", DefineStateKind.NOT_DEFINED, None)
+        self.addDefineState("__ICL", DefineStateKind.NOT_DEFINED, None)
+    def addDefineState(self, id, kind, value):
+        self.condition.define_states[id] = DefineState(id, kind, value)
     def fileLocationAtToken(self, token):
         lineno, col = errors.getLineAndCol(self.file_data.src[:token.start])
         return "{}({}:{}) ".format(self.file_data.filename, lineno, col)
@@ -155,16 +196,27 @@ class Preprocessor:
                 self.printPrefix()
                 print("define {}".format(node.desc(self.file_data.src)))
                 if self.condition.enabled:
-                    self.condition.defines[node.id] = DefineState(node.id)
+                    self.addDefineState(node.id, DefineStateKind.DEFINED, node.the_rest)
             elif isinstance(node, preprocessparse.IfdefNode):
                 self.printPrefix()
-                print("if{}def '{}'".format("n" if node.is_not else "", node.id))
                 if not self.condition.enabled:
                     enable_block = False
+                    is_quantum = False
                 else:
-                    is_defined = self.condition.get_is_defined(node.id)
-                    enable_block = (not is_defined) if node.is_not else is_defined
+                    state = self.condition.getDefineState(node.id)
+                    if state.kind == DefineStateKind.QUANTUM:
+                        enable_block = True
+                        is_quantum = True
+                    else:
+                        is_defined = (state.kind == DefineStateKind.DEFINED)
+                        assert(is_defined or state.kind == DefineStateKind.NOT_DEFINED)
+                        enable_block = (not is_defined) if node.is_not else is_defined
+                        is_quantum = False
+                print("if{}def '{}' ({})".format("n" if node.is_not else "", node.id,
+                                                 "enabled" if self.condition.enabled else "disabled"))
                 self.pushNode(node, enable_block)
+                if is_quantum:
+                    self.addDefineState(node.id, DefineStateKind.NOT_DEFINED if node.is_not else DefineStateKind.DEFINED, None)
             elif isinstance(node, preprocessparse.IfNode):
                 if not self.condition.enabled:
                     if_result = 0
@@ -184,7 +236,8 @@ class Preprocessor:
                 if self.condition.depth == 0:
                     sys.exit("else without an if?")
                 self.printPrefixWithDepth(self.condition.depth - 1)
-                print("else")
+                self.condition.handleElse()
+                print("else ({})".format("enabled" if self.condition.enabled else "disabled"))
             else:
                 # comment these out to make things faster for now
                 pass

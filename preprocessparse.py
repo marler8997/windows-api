@@ -344,8 +344,8 @@ class DefinedExpression(Expression):
     def __init__(self, id_node, id):
         self.id_node = id_node
         self.id = id
-    def eval(self, state):
-        return 1 if state.condition.get_is_defined(self.id) else 0
+    #def eval(self, state):
+    #    return 1 if state.condition.get_is_defined(self.id) else 0
 class ConstantExpression(Expression):
     def __init__(self, node, string_value):
         self.node = node
