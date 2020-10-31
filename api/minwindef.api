@@ -1,0 +1,3 @@
+typedef uint32_t DWORD;
+typedef uint32_t UINT;
+typedef void* HINSTANCE;

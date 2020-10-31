@@ -1,0 +1,7 @@
+BOOL WriteFile(
+    HANDLE hFile,
+    LPCVOID lpBuffer,
+    DWORD nNumberOfBytesToWrite,
+    LPDWORD lpNumberOfBytesWritten,
+    LPOVERLAPPED lpOverlapped
+);

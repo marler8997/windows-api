@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+import os
+import sys
+import inspect
+
+from stringreader import StringReader
+import lex
+import parse
+
+def testSyntaxError(src, msg):
+    caller = inspect.getframeinfo(inspect.stack()[1][0])
+    loc = "{}(line {})".format(caller.filename, caller.lineno)
+    parser = parse.Parser(lex.Lexer(StringReader(src, "")))
+    nodes = []
+    try:
+        parser.parseInto(nodes)
+        sys.exit("{}: expected the following code to fail with '{}' but it didn't:\n{}".format(loc, msg, src))
+    except lex.SyntaxError as err:
+        if str(err) != msg:
+            sys.exit("{}: the following code did not fail with the expected message:\n--- CODE ---\n{}\n--------------\nExpected: {}\nActual  : {}\n".format(loc, src, msg, str(err)))
+
+def testParse(src):
+    caller = inspect.getframeinfo(inspect.stack()[1][0])
+    parser = parse.Parser(lex.Lexer(StringReader(src, "{}(line {})".format(caller.filename, caller.lineno))))
+    nodes = []
+    parser.parseInto(nodes)
+    
+def main():
+    testSyntaxError("typedef", "line 1 col 8: expected type to start with ID but got: EOF")
+    testSyntaxError("typedef int", "line 1 col 12: expected ID after 'typedef TYPE' but got EOF")
+    testSyntaxError("typedef int a", "line 1 col 14: expected ; to finish typedef but got EOF")
+    testParse("typedef int a;")
+    testParse("typedef int* a;")
+    testSyntaxError("typedef int[", "line 1 col 13: expected ] to finish array type but got EOF")
+    testParse("typedef int[] a;")
+
+    testSyntaxError("struct", "line 1 col 7: expected ID after 'struct' but got EOF")
+    testSyntaxError("struct a", "line 1 col 9: expected { after 'struct ID' but got EOF")
+    testSyntaxError("struct a{", "line 1 col 10: expected a struct field but got EOF")
+    testParse("struct a{}")
+    testSyntaxError("struct a{int}", "line 1 col 13: expected ID after field type but got }")
+    testSyntaxError("struct a{int x}", "line 1 col 15: expected ; to finish field declaration but got }")
+    testParse("struct a{int x;}")
+
+    testSyntaxError("int", "line 1 col 4: expected ID after 'TYPE' (could be function or const) but got EOF")
+    testSyntaxError("int a", "line 1 col 1: expected '=' or '(' after 'TYPE ID' but got EOF")
+    testSyntaxError("int a =", "line 1 col 8: expected a constant value but got EOF")
+    testSyntaxError("int a = 0", "line 1 col 10: expected ; to finish const but got EOF")
+    testParse("int a = 0;")
+
+    testSyntaxError("int a(", "line 1 col 7: expected a function argument or ) but got EOF")
+    testSyntaxError("int a()", "line 1 col 8: expected ; to finish function declaration but got EOF")
+    testParse("int a();")
+    testSyntaxError("int a(,);", "line 1 col 7: expected type to start with ID but got: ,")
+    testSyntaxError("int a(int", "line 1 col 10: expected ID after argument type but got EOF")
+    testSyntaxError("int a(int b", "line 1 col 12: expected , or ) to finish function arguments but got EOF")
+    testSyntaxError("int a(int b,", "line 1 col 13: expected a function argument or ) but got EOF")
+    testSyntaxError("int a(int b)", "line 1 col 13: expected ; to finish function declaration but got EOF")
+    testSyntaxError("int a(int b,)", "line 1 col 14: expected ; to finish function declaration but got EOF")
+    testParse("int a(int b);")
+    testParse("int a(int b,);")
+    testParse("int a(int b, int c);")
+    testParse("int a(int b, int c,);")
+
+main()

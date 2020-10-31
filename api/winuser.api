@@ -1,0 +1,34 @@
+struct WNDCLASSA {
+    UINT        style;
+    WNDPROC     lpfnWndProc;
+    int         cbClsExtra;
+    int         cbWndExtra;
+    HINSTANCE   hInstance;
+    HICON       hIcon;
+    HCURSOR     hCursor;
+    HBRUSH      hbrBackground;
+    LPCSTR      lpszMenuName;
+    LPCSTR      lpszClassName;
+}
+typedef WNDCLASSA PWNDCLASSA;
+typedef WNDCLASSA NPWNDCLASSA;
+typedef WNDCLASSA LPWNDCLASSA;
+
+struct WNDCLASSW {
+    UINT        style;
+    WNDPROC     lpfnWndProc;
+    int         cbClsExtra;
+    int         cbWndExtra;
+    HINSTANCE   hInstance;
+    HICON       hIcon;
+    HCURSOR     hCursor;
+    HBRUSH      hbrBackground;
+    LPCWSTR     lpszMenuName;
+    LPCWSTR     lpszClassName;
+}
+typedef WNDCLASSW PWNDCLASSW;
+typedef WNDCLASSW NPWNDCLASSW;
+typedef WNDCLASSW LPWNDCLASSW;
+
+# TODO: implement the unicode directive
+#unicode WNDCLASS;

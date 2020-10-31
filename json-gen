@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import os
+import sys
+import shutil
+import json
+
+import stringreader
+import lex
+import parse
+import nativetypes
+
+NATIVE_TYPE_MAP = {}
+for t in nativetypes.NATIVE_TYPES:
+    NATIVE_TYPE_MAP[t] = True
+
+def typeToJsonData(type):
+    if isinstance(type, parse.NamedType):
+        if type.name in NATIVE_TYPE_MAP:
+            return {"kind":"native","name":type.name}
+        return {"kind":"alias","name":type.name}
+    if isinstance(type, parse.SinglePtrType):
+        return {"kind":"singleptr","subtype":typeToJsonData(type.sub_type)}
+    if isinstance(type, parse.ArrayPtrType):
+        return {"kind":"arrayptr","subtype":typeToJsonData(type.sub_type)}
+    raise Exception("unhandled type class {}".format(type(type).__name__))
+
+def toJsonData(nodes):
+    types = {}
+    constants = {}
+    functions = {}
+    for node in nodes:
+        if isinstance(node, parse.TypedefNode):
+            types[node.name] = {"kind":"typedef","definition":typeToJsonData(node.def_type)}
+        elif isinstance(node, parse.StructNode):
+            types[node.name] = {"kind":"struct",
+                                "fields":[{"type":typeToJsonData(field.type),"name":field.name} for field in node.fields]}
+        elif isinstance(node, parse.ConstNode):
+            constants[node.name] = {"type":typeToJsonData(node.type),"value":node.value}
+        elif isinstance(node, parse.FuncNode):
+            functions[node.name] = {"return_type":typeToJsonData(node.return_type),
+                                  "args":[{"type":typeToJsonData(arg.type),"name":arg.name} for arg in node.args]}
+        else:
+            raise Exception("unhandled node {}".format(type(node).__name__))
+    return {"types":types,"constants":constants,"functions":functions}
+
+def processFile(out_dir, filename):
+    name = os.path.basename(filename)[:-4]
+    out_filename = os.path.join(out_dir, name + ".json")
+    print("processing '{}' into '{}'".format(filename, out_filename))
+
+    with open(filename) as file:
+        text = file.read()
+
+    parser = parse.Parser(lex.Lexer(stringreader.StringReader(text, filename)))
+    nodes = []
+    parser.parseInto(nodes)
+
+    with open(out_filename, "w") as out_file:
+        json.dump(toJsonData(nodes), out_file)
+
+def main():
+    out_dir = os.path.join("out", "json")
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    os.makedirs(out_dir)
+    for entry_basename in os.listdir("api"):
+        if entry_basename.endswith(".api"):
+            processFile(out_dir, os.path.join("api", entry_basename))
+
+main()

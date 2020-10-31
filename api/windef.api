@@ -1,0 +1,3 @@
+typedef void* HBRUSH;
+typedef void* HICON;
+typedef void* HCURSOR;

@@ -1,0 +1,3 @@
+HANDLE GetStdHandle(
+    DWORD nStdHandle
+);

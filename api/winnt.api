@@ -1,0 +1,8 @@
+typedef char CHAR;
+typedef CHAR[] LPCSTR;
+
+typedef wchar_t WCHAR;
+typedef WCHAR[] PWSTR;
+typedef WCHAR[] LPWSTR;
+
+typedef void* HANDLE;
