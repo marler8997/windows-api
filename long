@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -ex
 mkdir -p out
-./go include > out/include
-./go 10.0.17763.0/shared > out/shared
-./go 10.0.17763.0/um > out/um
+time ./go include/include > out/include
+time ./go include/shared > out/shared
+time ./go include/um > out/um
 echo Success

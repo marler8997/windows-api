@@ -355,15 +355,17 @@ def runTests():
     testPreprocess('#if defined(a) && b\n#endif')
     testPreprocess('#if defined(auto)\n#endif')
 
+def get_dir_entries(dir):
+    return [os.path.join(dir, entry) for entry in os.listdir(dir)]
+
 def main():
     runTests()
-    include_dirs = [
-        "include",
-        "10.0.17763.0/shared",
-        "10.0.17763.0/um",
-        "10.0.17763.0/ucrt",
-        "10.0.17763.0/winrt",
-    ]
+
+    include_dirs = get_dir_entries("include")
+    print("{} include dirs:".format(len(include_dirs)))
+    for dir in include_dirs:
+        print("  {}".format(dir))
+
     cmd_args = sys.argv[1:]
     if len(cmd_args) == 0:
         process_include(include_dirs, "Windows.h")

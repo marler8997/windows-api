@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -ex
 mkdir -p out
-./go --peg-preprocessor include > out/include
-./go --peg-preprocessor 10.0.17763.0/shared > out/shared
-./go --peg-preprocessor 10.0.17763.0/um > out/um
+time ./go --peg-preprocessor include/include > out/include
+time ./go --peg-preprocessor include/shared > out/shared
+time ./go --peg-preprocessor include/um > out/um
 echo Success
