@@ -1,0 +1,25 @@
+Blocks = MultilineSpacing (Block MultilineSpacing)*
+Block = Directive / Tokens
+Tokens = (Token TokenSpacing)*
+
+TokenSpacing = InlineSpacing / (!(MultilineSpacing StartDirective) MultilineSpacing)
+
+Token = IDENTIFIER_TOKEN / COMMA / LPAR / RPAR / LINE_CONTINUATION / Opaque
+COMMA = ","
+LPAR = "("
+RPAR = ")"
+LINE_CONTINUATION = "\\" Newline
+Opaque = (~"[{}<>=:;*&0-9~ \t%\[\]!\-+\.?|\^]" / NON_COMMENT_SLASH / StringLiteral / CharacterConstant)*
+NON_COMMENT_SLASH = !"//" !"/*" "/"
+
+END_OF_INPUT = !~"."s
+
+InlineSpacing = (InlineWhiteSpace / InlineComment)*
+InlineWhiteSpace = ~"[ \t]"+
+InlineComment = "/*" (!"*/" ~".")* "*/"
+
+MultilineSpacing = (MultilineWhitespace / MultilineComment)*
+MultilineComment = ("/*" (!"*/" ~"."s)* "*/") / ("//" ~"[^\r\n]"* EndOfLine)
+
+StartDirective = "#"
+Directive = StartDirective ((Token / "##") InlineSpacing)* (EndOfLine / MultilineSpacing)

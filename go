@@ -287,6 +287,37 @@ def test_headers_in(include_dirs, dir, file_limit, **kwargs):
         process_file(include_dirs, os.path.join(dir, entry), **kwargs)
         file_count += 1
 
+def testPegPreprocessor(include_dirs, filename, **kwargs):
+    import preprocesspeg
+    print("[TEST] parsing file '{}'".format(filename))
+    with open(filename, "r") as file:
+        src = file.read()
+    parsed = preprocesspeg.GRAMMAR.parse(src)
+
+def testPegPreprocessorIn(include_dirs, dir, file_limit, **kwargs):
+    file_count = 0
+    print("[TEST] searching for headers in '{}':".format(dir))
+    for entry in os.listdir(dir):
+        if file_count == file_limit:
+            print("[TEST] reached file limit of '{}'".format(file_limit))
+            return
+        if not entry.endswith(".h"):
+            continue
+        if entry == "xcharconv_ryu.h":
+            # contains this weird integer literal: 1'000'000'000
+            continue
+        if entry == "apiset.h":
+            # contains some weird preprocessor: @##O
+            continue
+        if "kxarm" in entry:
+            # these aren't really valid C/C++ headers
+            continue
+        if entry == "driverspecs.h":
+            # contains hashes in the preprocessor define:  ... (#kind, param) ... #kind, param
+            continue
+        testPegPreprocessor(include_dirs, os.path.join(dir, entry), **kwargs)
+        file_count += 1
+
 def testLex(src, *expected):
     import inspect
     filename = "{}:{}".format(__file__, inspect.currentframe().f_back.f_lineno)
@@ -336,8 +367,12 @@ def main():
     cmd_args = sys.argv[1:]
     if len(cmd_args) == 0:
         process_include(include_dirs, "Windows.h")
-    else:
+    elif len(cmd_args) == 2 and cmd_args[0] == "--peg-preprocessor":
+        testPegPreprocessorIn(include_dirs, cmd_args[1], 999, ignore_includes=True)
+    elif len(cmd_args) == 1:
         test_headers_in(include_dirs, cmd_args[0], 999, ignore_includes=True)
+    else:
+        sys.exit("unexpected command-line")
 
     #test_headers_in(include_dirs, "include", 999, ignore_includes=True)
     #test_headers_in(include_dirs, "10.0.17763.0/shared", 999, ignore_includes=True)

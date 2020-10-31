@@ -1,0 +1,46 @@
+Newline = "\r\n" / "\n"
+EndOfLine = Newline / !~"."s
+
+MultilineWhitespace = ~"[ \t\n\r\f]"+
+
+#
+# Identifiers
+#
+
+IDENTIFIER_TOKEN = ~"[a-zA-Z_][a-zA-Z_0-9]*"
+
+#-------------------------------------------------------------------------
+#  A.1.4  Universal character names
+#-------------------------------------------------------------------------
+UniversalCharacter = ("\\u" HexQuad) / ("\\U" HexQuad HexQuad)
+HexQuad = HexDigit HexDigit HexDigit HexDigit
+
+#-------------------------------------------------------------------------
+#  A.1.5  Constants
+#-------------------------------------------------------------------------
+
+CharacterConstant = "L"? "'" Char* "'"
+
+#Char <- Escape / !['\n\\] .
+Char = Escape / (!("'" / "\n" / "\\") ~".")
+
+#-------------------------------------------------------------------------
+#  A.1.6  String Literals
+#-------------------------------------------------------------------------
+StringLiteral = "L"? (StringLiteralPart MultilineWhitespace*)+
+StringLiteralPart = "\"" StringChar* "\""
+
+#StringChar <- Escape / ![\"\n\\] .
+StringChar = Escape / (!("\"" / "\n" / "\\") ~".")
+
+Escape = SimpleEscape / OctalEscape / HexEscape / UniversalCharacter
+
+#SimpleEscape <- '\\' ['\"?\\%abfnrtv]
+SimpleEscape = "\\" ~r"['\"?\\%abfnrtv]"
+
+#OctalEscape  <- '\\' [0-7][0-7]?[0-7]?
+OctalEscape = "\\" ~"[0-7][0-7]?[0-7]?"
+
+#HexEscape    <- '\\x' HexDigit+
+HexEscape = "\\x" HexDigit+
+HexDigit = ~"[a-fA-F0-9]"
