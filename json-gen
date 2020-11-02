@@ -9,6 +9,8 @@ import lex
 import parse
 import nativetypes
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 NATIVE_TYPE_MAP = {}
 for t in nativetypes.NATIVE_TYPES:
     NATIVE_TYPE_MAP[t] = True
@@ -46,7 +48,7 @@ def toJsonData(nodes):
 def processFile(out_dir, filename):
     name = os.path.basename(filename)[:-4]
     out_filename = os.path.join(out_dir, name + ".json")
-    print("processing '{}' into '{}'".format(filename, out_filename))
+    print("generating: {}".format(out_filename))
 
     with open(filename) as file:
         text = file.read()
@@ -59,12 +61,13 @@ def processFile(out_dir, filename):
         json.dump(toJsonData(nodes), out_file)
 
 def main():
-    out_dir = os.path.join("out", "json")
+    out_dir = os.path.join(SCRIPT_DIR, "out", "json")
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
-    for entry_basename in os.listdir("api"):
+    api_dir = os.path.join(SCRIPT_DIR, "api")
+    for entry_basename in os.listdir(api_dir):
         if entry_basename.endswith(".api"):
-            processFile(out_dir, os.path.join("api", entry_basename))
+            processFile(out_dir, os.path.join(api_dir, entry_basename))
 
 main()

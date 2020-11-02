@@ -3,6 +3,9 @@ import os
 import sys
 import inspect
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.dirname(SCRIPT_DIR))
+
 from stringreader import StringReader
 import lex
 import parse
@@ -78,5 +81,6 @@ def main():
     testParse("const int a(int b, int c,);")
     testParse("const int* a(int b, int c,);")
     testParse("const int[] a(int b, int c,);")
+    print("Success")
 
 main()

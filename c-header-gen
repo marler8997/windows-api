@@ -8,6 +8,8 @@ import stringreader
 import lex
 import parse
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 class Header:
     def __init__(self, name, json_filename, header_filename, jsondata, type_refs, type_exports):
         self.name = name
@@ -66,6 +68,7 @@ def writeTypeRef(out_file, type):
         out_file.write("*")
 
 def generateHeader(header):
+    print("generating: {}".format(header.header_filename))
     with open(header.header_filename, "w") as out_file:
         out_file.write('#ifndef __{}_header_guard__\n'.format(header.name))
         out_file.write('#define __{}_header_guard__\n'.format(header.name))
@@ -133,12 +136,12 @@ def generateHeader(header):
         out_file.write('#endif // __{}_header_guard__\n'.format(header.name))
 
 def main():
-    out_dir = os.path.join("out", "c")
+    out_dir = os.path.join(SCRIPT_DIR, "out", "c")
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
 
-    json_dir = os.path.join("out", "json")
+    json_dir = os.path.join(SCRIPT_DIR, "out", "json")
     headers = []
     for entry_basename in os.listdir(json_dir):
         assert(entry_basename.endswith(".json"))
