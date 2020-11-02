@@ -1,3 +1,6 @@
+# TODO: support function pointer types!
+typedef void* WNDPROC;
+
 struct WNDCLASSA {
     UINT        style;
     WNDPROC     lpfnWndProc;

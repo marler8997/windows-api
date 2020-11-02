@@ -34,6 +34,10 @@ def main():
     testSyntaxError("typedef int[", "line 1 col 13: expected ] to finish array type but got EOF")
     testParse("typedef int[] a;")
 
+    testParse("typedef const int a;")
+    testParse("typedef const int* a;")
+    testParse("typedef const int[] a;")
+
     testSyntaxError("struct", "line 1 col 7: expected ID after 'struct' but got EOF")
     testSyntaxError("struct a", "line 1 col 9: expected { after 'struct ID' but got EOF")
     testSyntaxError("struct a{", "line 1 col 10: expected a struct field but got EOF")
@@ -41,12 +45,20 @@ def main():
     testSyntaxError("struct a{int}", "line 1 col 13: expected ID after field type but got }")
     testSyntaxError("struct a{int x}", "line 1 col 15: expected ; to finish field declaration but got }")
     testParse("struct a{int x;}")
+    testParse("struct a{int x;int y;}")
+    testParse("struct a{int x;int y;const int[] arr;}")
+    testParse("struct a{int x;int y;const int[] arr;const int cx;}")
 
     testSyntaxError("int", "line 1 col 4: expected ID after 'TYPE' (could be function or const) but got EOF")
     testSyntaxError("int a", "line 1 col 1: expected '=' or '(' after 'TYPE ID' but got EOF")
     testSyntaxError("int a =", "line 1 col 8: expected a constant value but got EOF")
     testSyntaxError("int a = 0", "line 1 col 10: expected ; to finish const but got EOF")
     testParse("int a = 0;")
+    testParse("int* a = 0;")
+    testParse("int[] a = 0;")
+    testParse("const int a = 0;")
+    testParse("const int* a = 0;")
+    testParse("const int[] a = 0;")
 
     testSyntaxError("int a(", "line 1 col 7: expected a function argument or ) but got EOF")
     testSyntaxError("int a()", "line 1 col 8: expected ; to finish function declaration but got EOF")
@@ -61,5 +73,10 @@ def main():
     testParse("int a(int b,);")
     testParse("int a(int b, int c);")
     testParse("int a(int b, int c,);")
+    testParse("int* a(int b, int c,);")
+    testParse("int[] a(int b, int c,);")
+    testParse("const int a(int b, int c,);")
+    testParse("const int* a(int b, int c,);")
+    testParse("const int[] a(int b, int c,);")
 
 main()

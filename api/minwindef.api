@@ -1,3 +1,10 @@
+typedef int BOOL;
+
 typedef uint32_t DWORD;
+typedef DWORD* LPDWORD;
+
 typedef uint32_t UINT;
+
 typedef void* HINSTANCE;
+
+typedef const void* LPCVOID;

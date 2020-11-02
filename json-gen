@@ -19,9 +19,9 @@ def typeToJsonData(type):
             return {"kind":"native","name":type.name}
         return {"kind":"alias","name":type.name}
     if isinstance(type, parse.SinglePtrType):
-        return {"kind":"singleptr","subtype":typeToJsonData(type.sub_type)}
+        return {"kind":"singleptr","const":type.const, "subtype":typeToJsonData(type.sub_type)}
     if isinstance(type, parse.ArrayPtrType):
-        return {"kind":"arrayptr","subtype":typeToJsonData(type.sub_type)}
+        return {"kind":"arrayptr","const":type.const,"subtype":typeToJsonData(type.sub_type)}
     raise Exception("unhandled type class {}".format(type(type).__name__))
 
 def toJsonData(nodes):

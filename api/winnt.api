@@ -4,5 +4,6 @@ typedef CHAR[] LPCSTR;
 typedef wchar_t WCHAR;
 typedef WCHAR[] PWSTR;
 typedef WCHAR[] LPWSTR;
+typedef const WCHAR* LPCWSTR;
 
 typedef void* HANDLE;

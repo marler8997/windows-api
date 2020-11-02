@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+import os
+import sys
+import shutil
+import json
+
+import stringreader
+import lex
+import parse
+
+class Header:
+    def __init__(self, name, json_filename, header_filename, jsondata, type_refs, type_exports):
+        self.name = name
+        self.json_filename = json_filename
+        self.header_filename = header_filename
+        self.jsondata = jsondata
+        self.type_refs = type_refs
+        self.type_exports = type_exports
+        self.imports = {}
+
+# given a type from the json data, return the type name reference if there is one and it is not native
+def addTypeRefs(type_refs, type):
+    kind = type["kind"]
+    if kind == "native":
+        return
+    if kind == "alias":
+        type_refs[type["name"]] = True
+    if kind == "singleptr" or kind == "arrayptr":
+        return addTypeRefs(type_refs, type["subtype"])
+
+def parseJson(json_filename):
+    with open(json_filename, "r") as file:
+        jsondata = json.load(file)
+    type_refs = {}
+    type_exports = {}
+    #
+    # find type_refs
+    #
+    for name, info in jsondata["constants"].items():
+        addTypeRefs(type_refs, info["type"])
+    for name, info in jsondata["types"].items():
+        type_exports[name] = info
+        kind = info["kind"]
+        if kind == "typedef":
+            addTypeRefs(type_refs, info["definition"])
+        elif kind == "struct":
+            for field in info["fields"]:
+                addTypeRefs(type_refs, field["type"])
+        else:
+            assert(False)
+    for name, info in jsondata["functions"].items():
+        addTypeRefs(type_refs, info["return_type"])
+        for arg in info["args"]:
+            addTypeRefs(type_refs, arg["type"])
+    return jsondata, type_refs, type_exports
+
+def writeTypeRef(out_file, type):
+    kind = type["kind"]
+    if kind == "native" or kind == "alias":
+        out_file.write(type["name"])
+    else:
+        assert(kind == "singleptr" or kind == "arrayptr")
+        if type["const"]:
+            out_file.write("const ")
+        writeTypeRef(out_file, type["subtype"])
+        out_file.write("*")
+
+def generateHeader(header):
+    with open(header.header_filename, "w") as out_file:
+        out_file.write('#ifndef __{}_header_guard__\n'.format(header.name))
+        out_file.write('#define __{}_header_guard__\n'.format(header.name))
+        out_file.write('#include <stdint.h>\n')
+        out_file.write('#include <wchar.h>\n')
+        out_file.write('#if defined(__linux__)\n')
+        out_file.write('    #include <sys/types.h> // for ssize_t\n')
+        out_file.write('#endif\n')
+        # write typedefs
+        for i in header.imports:
+            out_file.write("#include <{}.h>\n".format(i.name))
+        types = header.jsondata["types"].items()
+        out_file.write("//\n")
+        out_file.write("// typedefs\n")
+        out_file.write("//\n")
+        for name, info in types:
+            kind = info["kind"]
+            if kind == "typedef":
+                out_file.write("typedef ")
+                writeTypeRef(out_file, info["definition"])
+                out_file.write(" {};\n".format(name))
+            elif kind == "struct":
+                out_file.write("typedef struct {} {};\n".format(name, name))
+            else:
+                assert(False)
+        constants = header.jsondata["constants"].items()
+        if len(constants) > 0:
+            out_file.write("//\n")
+            out_file.write("// constants\n")
+            out_file.write("//\n")
+            for name, info in constants:
+                writeTypeRef(out_file, info["type"])
+                out_file.write(" {} = {};\n".format(name, info["value"]))
+        out_file.write("//\n")
+        out_file.write("// structs\n")
+        out_file.write("//\n")
+        for name, info in types:
+            kind = info["kind"]
+            if kind == "typedef":
+                continue
+            elif kind == "struct":
+                out_file.write("struct {} {{\n".format(name))
+                for field in info["fields"]:
+                    out_file.write("    ")
+                    writeTypeRef(out_file, field["type"])
+                    out_file.write(" {};\n".format(field["name"]))
+                out_file.write("};\n")
+            else:
+                assert(False)
+        functions = header.jsondata["functions"].items()
+        if len(functions) > 0:
+            out_file.write("//\n")
+            out_file.write("// functions\n")
+            out_file.write("//\n")
+            for name, info in functions:
+                writeTypeRef(out_file, info["return_type"])
+                out_file.write(" {}(".format(name))
+                prefix = ""
+                for arg in info["args"]:
+                    out_file.write("{}\n    ".format(prefix))
+                    writeTypeRef(out_file, arg["type"])
+                    out_file.write(" {}".format(arg["name"]))
+                    prefix = ","
+                out_file.write("\n);\n")
+        out_file.write('#endif // __{}_header_guard__\n'.format(header.name))
+
+def main():
+    out_dir = os.path.join("out", "c")
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    os.makedirs(out_dir)
+
+    json_dir = os.path.join("out", "json")
+    headers = []
+    for entry_basename in os.listdir(json_dir):
+        assert(entry_basename.endswith(".json"))
+        json_filename = os.path.join(json_dir, entry_basename)
+        name = entry_basename[:-5]
+        header_filename = os.path.join(out_dir, name + ".h")
+        jsondata, type_refs, type_exports = parseJson(json_filename)
+        headers.append(Header(name, json_filename, header_filename, jsondata, type_refs, type_exports))
+
+    # create global type table
+    global_type_exports = {}
+    for header in headers:
+        for type_export in header.type_exports:
+            conflict = global_type_exports.get(type_export, None)
+            if conflict:
+                sys.exit("Error: type conflict (TODO: print more info)")
+            global_type_exports[type_export] = header
+
+    # resolve type_refs
+    for header in headers:
+        for type_ref in header.type_refs:
+            if type_ref in header.type_exports:
+                continue
+            need = global_type_exports.get(type_ref, None)
+            if not need:
+                sys.exit("Error: undefined type '{}' appears in '{}'".format(type_ref, header.json_filename))
+            header.imports[need] = True
+
+    for header in headers:
+        generateHeader(header)
+
+main()

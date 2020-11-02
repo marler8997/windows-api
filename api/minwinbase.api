@@ -1,0 +1,16 @@
+struct OVERLAPPED {
+    ULONG_PTR Internal;
+    ULONG_PTR InternalHigh;
+    # TODO: add union support
+    #union {
+    #    struct {
+    #        DWORD Offset;
+    #        DWORD OffsetHigh;
+    #    } ;
+    #    PVOID Pointer;
+    #} ;
+    DWORD Offset;
+    DWORD OffsetHigh;
+    HANDLE  hEvent;    
+}
+typedef OVERLAPPED* LPOVERLAPPED;

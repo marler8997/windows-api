@@ -1,0 +1,23 @@
+#!/usr/bin/env sh
+
+if [ "$CC" == "" ]; then
+   CC=gcc
+fi
+
+rm -rf out/scratch
+mkdir -p out/scratch
+cat > out/scratch/main.c <<EOF
+#include <winbase.h>
+#include <fileapi.h>
+#include <processenv.h>
+
+#define MSG "Hello\n"
+
+int main(int argc,char* argv[]) {
+    DWORD written = 0;
+    WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), MSG, sizeof(MSG) - 1, &written, 0);
+    return 0;
+}
+EOF
+
+$CC -oout/scratch/main.o -Iout/c -c out/scratch/main.c

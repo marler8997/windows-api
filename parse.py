@@ -67,15 +67,17 @@ class NamedType(Type):
     def __repr__(self):
         return self.name
 class SinglePtrType(Type):
-    def __init__(self, sub_type):
+    def __init__(self, sub_type, const):
         self.sub_type = sub_type
+        self.const = const
     def __repr__(self):
-        return "{}*".format(self.sub_type)
+        return "{}{}*".format("const " if self.const else "", self.sub_type)
 class ArrayPtrType(Type):
-    def __init__(self, sub_type):
+    def __init__(self, sub_type, const):
         self.sub_type = sub_type
+        self.const = const
     def __repr__(self):
-        return "{}[]".format(self.sub_type)
+        return "{}{}[]".format("const " if self.const else "", self.sub_type)
 
 class Parser:
     def __init__(self, lexer: lex.Lexer):
@@ -159,20 +161,29 @@ class Parser:
         return TypedefNode(typedef_token, self.str[name_token.start:name_token.end], def_type)
 
     def parseType(self):
+        const = False
         token = self.peekToken()
         if token.kind != lex.ID:
             self.errAt(token, "expected type to start with ID but got: {}".format(token.desc(self.str)))
-        type = NamedType(self.str[token.start:token.end])
+        token_str = self.str[token.start:token.end]
+        if token_str == "const":
+            const = True
+            self.popToken()
+            token = self.peekToken()
+            if token.kind != lex.ID:
+                self.errAt(token, "expected ID after 'const' but got {}".format(token.desc(self.str)))
+            token_str = self.str[token.start:token.end]
+        type = NamedType(token_str)
         self.popToken()
         while True:
             mod_token = self.peekToken()
             if mod_token.kind == lex.STAR:
-                type = SinglePtrType(type)
+                type = SinglePtrType(type, const)
                 self.popToken()
             elif mod_token.kind == lex.LEFT_BRACKET:
                 self.popToken()
                 _ = self.peekPopKnownToken("to finish array type", (lex.RIGHT_BRACKET,))
-                type = ArrayPtrType(type)
+                type = ArrayPtrType(type, const)
             else:
                 break
         return type
