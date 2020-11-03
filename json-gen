@@ -30,20 +30,20 @@ def typeToJsonData(t):
     raise Exception("unhandled type class {}".format(type(t).__name__))
 
 def toJsonData(nodes):
-    types = {}
-    constants = {}
-    functions = {}
+    types = []
+    constants = []
+    functions = []
     for node in nodes:
         if isinstance(node, parse.TypedefNode):
-            types[node.name] = {"kind":"typedef","definition":typeToJsonData(node.def_type)}
+            types.append({"kind":"typedef","name":node.name,"definition":typeToJsonData(node.def_type)})
         elif isinstance(node, parse.StructNode):
-            types[node.name] = {"kind":"struct",
-                                "fields":[{"type":typeToJsonData(field.type),"name":field.name} for field in node.fields]}
+            types.append({"kind":"struct","name":node.name,
+                                "fields":[{"type":typeToJsonData(field.type),"name":field.name} for field in node.fields]})
         elif isinstance(node, parse.ConstNode):
-            constants[node.name] = {"type":typeToJsonData(node.type),"value":node.value}
+            constants.append({"name":node.name,"type":typeToJsonData(node.type),"value":node.value})
         elif isinstance(node, parse.FuncNode):
-            functions[node.name] = {"return_type":typeToJsonData(node.return_type),
-                                  "args":[{"type":typeToJsonData(arg.type),"name":arg.name} for arg in node.args]}
+            functions.append({"name":node.name,"return_type":typeToJsonData(node.return_type),
+                              "args":[{"type":typeToJsonData(arg.type),"name":arg.name} for arg in node.args]})
         else:
             raise Exception("unhandled node {}".format(type(node).__name__))
     return {"types":types,"constants":constants,"functions":functions}

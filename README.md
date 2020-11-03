@@ -4,6 +4,11 @@ The Windows API in a parseable format.
 
 This data should contain enough information to create bindings to the Windows API, including a "functional recreation" (not verbatim) of the C/C++ header files included in the Microsoft SDK.
 
+# The JSON format
+
+> TODO: document JSON format when it becomes more finalized
+> NOTE: I use arrays instead of objects for types/constants/functions so consumers can maintain a consistent "order"
+
 # The "C-ish" format
 
 The API will be maintained in a format that closely resembles C/C++ (aka "C-ish").  A tool will parse this custom format and convert it to JSON so it can easily be consumed by other tools.  This reason for making the custom format similar to `C/C++` is to make it easy to copy/paste definitions from the Microsoft SDK documentation and header files.

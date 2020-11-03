@@ -30,7 +30,7 @@ def addTypeRefs(type_refs, type):
     if kind == "singleptr" or kind == "arrayptr":
         return addTypeRefs(type_refs, type["subtype"])
 
-def parseJson(json_filename):
+def analyzeJson(json_filename):
     with open(json_filename, "r") as file:
         jsondata = json.load(file)
     type_refs = {}
@@ -38,10 +38,10 @@ def parseJson(json_filename):
     #
     # find type_refs
     #
-    for name, info in jsondata["constants"].items():
+    for info in jsondata["constants"]:
         addTypeRefs(type_refs, info["type"])
-    for name, info in jsondata["types"].items():
-        type_exports[name] = info
+    for info in jsondata["types"]:
+        type_exports[info["name"]] = info
         kind = info["kind"]
         if kind == "typedef":
             addTypeRefs(type_refs, info["definition"])
@@ -50,7 +50,7 @@ def parseJson(json_filename):
                 addTypeRefs(type_refs, field["type"])
         else:
             assert(False)
-    for name, info in jsondata["functions"].items():
+    for info in jsondata["functions"]:
         addTypeRefs(type_refs, info["return_type"])
         for arg in info["args"]:
             addTypeRefs(type_refs, arg["type"])
@@ -111,12 +111,13 @@ def generateHeader(header):
         # write typedefs
         for i in header.imports:
             out_file.write("#include <{}.h>\n".format(i.name))
-        types = header.jsondata["types"].items()
+        types = header.jsondata["types"]
         out_file.write("//\n")
         out_file.write("// typedefs\n")
         out_file.write("//\n")
-        for name, info in types:
+        for info in types:
             kind = info["kind"]
+            name = info["name"]
             if kind == "typedef":
                 out_file.write("typedef ")
                 writeTypeRefAndName(out_file, info["definition"], name)
@@ -125,12 +126,13 @@ def generateHeader(header):
                 out_file.write("typedef struct {} {};\n".format(name, name))
             else:
                 assert(False)
-        constants = header.jsondata["constants"].items()
+        constants = header.jsondata["constants"]
         if len(constants) > 0:
             out_file.write("//\n")
             out_file.write("// constants\n")
             out_file.write("//\n")
-            for name, info in constants:
+            for info in constants:
+                name = info["name"]
                 type = info["type"]
                 if isVoid(type):
                     out_file.write("#define {} {}\n".format(name, info["value"]))
@@ -141,12 +143,12 @@ def generateHeader(header):
         out_file.write("//\n")
         out_file.write("// structs\n")
         out_file.write("//\n")
-        for name, info in types:
+        for info in types:
             kind = info["kind"]
             if kind == "typedef":
                 continue
             elif kind == "struct":
-                out_file.write("struct {} {{\n".format(name))
+                out_file.write("struct {} {{\n".format(info["name"]))
                 for field in info["fields"]:
                     out_file.write("    ")
                     writeTypeRefAndName(out_file, field["type"], field["name"])
@@ -154,14 +156,14 @@ def generateHeader(header):
                 out_file.write("};\n")
             else:
                 assert(False)
-        functions = header.jsondata["functions"].items()
+        functions = header.jsondata["functions"]
         if len(functions) > 0:
             out_file.write("//\n")
             out_file.write("// functions\n")
             out_file.write("//\n")
-            for name, info in functions:
+            for info in functions:
                 writeTypeRefNoName(out_file, info["return_type"])
-                out_file.write(" {}(".format(name))
+                out_file.write(" {}(".format(info["name"]))
                 prefix = ""
                 for arg in info["args"]:
                     out_file.write("{}\n    ".format(prefix))
@@ -183,7 +185,7 @@ def main():
         json_filename = os.path.join(json_dir, entry_basename)
         name = entry_basename[:-5]
         header_filename = os.path.join(out_dir, name + ".h")
-        jsondata, type_refs, type_exports = parseJson(json_filename)
+        jsondata, type_refs, type_exports = analyzeJson(json_filename)
         headers.append(Header(name, json_filename, header_filename, jsondata, type_refs, type_exports))
 
     # create global type table
