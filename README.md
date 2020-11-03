@@ -26,6 +26,27 @@ HANDLE GetStdHandle(DWORD nStdHandle);
 struct POINT { UINT x; UINT y; }
 ```
 
+You can declare a constant with a `void` type like this:
+```c
+void FALSE = 0;
+void TRUE = 1;
+```
+This means the constant has no "type", it's just a typeless value.
+
+Also, intead of pointer types like `T*`, you can specify `T[]` to indicate a pointer to an array of multiple items.
+
+# TODO:
+
+Handle macros?  Like:
+```
+##define MAKEWORD(a, b)      ((WORD)(((BYTE)(((DWORD_PTR)(a)) & 0xff)) | ((WORD)((BYTE)(((DWORD_PTR)(b)) & 0xff))) << 8))
+##define MAKELONG(a, b)      ((LONG)(((WORD)(((DWORD_PTR)(a)) & 0xffff)) | ((DWORD)((WORD)(((DWORD_PTR)(b)) & 0xffff))) << 16))
+##define LOWORD(l)           ((WORD)(((DWORD_PTR)(l)) & 0xffff))
+##define HIWORD(l)           ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
+##define LOBYTE(w)           ((BYTE)(((DWORD_PTR)(w)) & 0xff))
+##define HIBYTE(w)           ((BYTE)((((DWORD_PTR)(w)) >> 8) & 0xff))
+```
+
 # Native Types
 
 The following native types are supported and will appear the same way in the resulting json output.

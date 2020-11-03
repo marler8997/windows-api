@@ -56,6 +56,9 @@ def parseJson(json_filename):
             addTypeRefs(type_refs, arg["type"])
     return jsondata, type_refs, type_exports
 
+def isVoid(type):
+    return type["kind"] == "native" and type["name"] == "void"
+
 def writeTypeRef(out_file, type):
     kind = type["kind"]
     if kind == "native" or kind == "alias":
@@ -106,8 +109,13 @@ def generateHeader(header):
             out_file.write("// constants\n")
             out_file.write("//\n")
             for name, info in constants:
-                writeTypeRef(out_file, info["type"])
-                out_file.write(" {} = {};\n".format(name, info["value"]))
+                type = info["type"]
+                if isVoid(type):
+                    out_file.write("#define {} {}\n".format(name, info["value"]))
+                else:
+                    out_file.write("#define {} ((".format(name))
+                    writeTypeRef(out_file, type)
+                    out_file.write("){})\n".format(info["value"]))
         out_file.write("//\n")
         out_file.write("// structs\n")
         out_file.write("//\n")

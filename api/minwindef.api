@@ -1,10 +1,73 @@
+
+typedef void* LPVOID;
+typedef const void* LPCVOID;
+
 typedef int BOOL;
+typedef BOOL* PBOOL;
+typedef BOOL* LPBOOL;
+
+typedef uint8_t BYTE;
+typedef BYTE* PBYTE;
+typedef BYTE* LPBYTE;
+typedef uint8_t UCHAR;
+typedef UCHAR* PUCHAR;
+
+typedef uint16_t WORD;
+typedef WORD* PWORD;
+typedef WORD* LPWORD;
+typedef uint16_t USHORT;
+typedef USHORT* PUSHORT;
 
 typedef uint32_t DWORD;
+typedef DWORD* PDWORD;
 typedef DWORD* LPDWORD;
 
+typedef uint32_t ULONG;
+typedef ULONG* PULONG;
+typedef int32_t LONG;
+typedef LONG* LPLONG;
+
+typedef int32_t INT;
+typedef INT* PINT;
+typedef INT* LPINT;
+
 typedef uint32_t UINT;
+typedef UINT* PUINT;
+typedef UINT* LPUINT;
 
 typedef void* HINSTANCE;
 
-typedef const void* LPCVOID;
+void MAX_PATH = 260;
+
+void NULL = 0;
+
+void FALSE = 0;
+void TRUE = 1;
+
+#typedef float               FLOAT;
+#typedef FLOAT               *PFLOAT;
+
+typedef UINT_PTR            WPARAM;
+typedef LONG_PTR            LPARAM;
+typedef LONG_PTR            LRESULT;
+
+typedef HANDLE* SPHANDLE;
+typedef HANDLE* LPHANDLE;
+typedef HANDLE HGLOBAL;
+typedef HANDLE HLOCAL;
+typedef HANDLE GLOBALHANDLE;
+typedef HANDLE LOCALHANDLE;
+
+# TODO: define these function pointers:
+#typedef int (*FARPROC)();
+#typedef int (*NEARPROC)();
+#typedef int (*PROC)();
+
+typedef WORD ATOM;
+
+struct FILETIME {
+    DWORD dwLowDateTime;
+    DWORD dwHighDateTime;
+}
+typedef FILETIME* PFILETIME;
+typedef FILETIME* LPFILETIME;

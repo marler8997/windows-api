@@ -5,3 +5,94 @@ BOOL WriteFile(
     LPDWORD lpNumberOfBytesWritten,
     LPOVERLAPPED lpOverlapped
 );
+
+void CREATE_NEW          = 1;
+void CREATE_ALWAYS       = 2;
+void OPEN_EXISTING       = 3;
+void OPEN_ALWAYS         = 4;
+void TRUNCATE_EXISTING   = 5;
+
+DWORD INVALID_FILE_SIZE = 0xFFFFFFFF;
+DWORD INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
+DWORD INVALID_FILE_ATTRIBUTES = 0xFFFFFFFF;
+
+LONG CompareFileTime(
+    const FILETIME* lpFileTime1,
+    const FILETIME* lpFileTime2
+);
+
+BOOL CreateDirectoryA(
+    LPCSTR lpPathName,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes
+);
+
+BOOL CreateDirectoryW(
+    LPCWSTR lpPathName,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes
+);
+
+# TODO:
+# unicode CreateDirectory
+
+HANDLE CreateFileA(
+    LPCSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+);
+
+HANDLE CreateFileW(
+    LPCWSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+);
+
+# TODO:
+# unicode CreateFile
+
+BOOL DefineDosDeviceW(
+    DWORD dwFlags,
+    LPCWSTR lpDeviceName,
+    LPCWSTR lpTargetPath
+);
+
+# TODO:
+# unicode DefineDosDevice
+
+BOOL DeleteFileA(LPCSTR lpFileName);
+BOOL DeleteFileW(LPCWSTR lpFileName);
+# TODO:
+# unicode DeleteFile
+
+BOOL DeleteVolumeMountPointW(LPCWSTR lpszVolumeMountPoint);
+# TODO:
+# unicode DeleteVolumeMountPoint
+
+BOOL FileTimeToLocalFileTime(
+    const FILETIME* lpFileTime,
+    LPFILETIME lpLocalFileTime
+);
+
+BOOL FindClose(HANDLE hFindFile);
+
+BOOL FindCloseChangeNotification(HANDLE hChangeHandle);
+
+HANDLE FindFirstChangeNotificationA(
+    LPCSTR lpPathName,
+    BOOL bWatchSubtree,
+    DWORD dwNotifyFilter
+);
+HANDLE FindFirstChangeNotificationW(
+    LPCWSTR lpPathName,
+    BOOL bWatchSubtree,
+    DWORD dwNotifyFilter
+);
+# TODO:
+# unicode FindFirstChangeNotification
