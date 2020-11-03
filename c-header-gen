@@ -59,16 +59,38 @@ def parseJson(json_filename):
 def isVoid(type):
     return type["kind"] == "native" and type["name"] == "void"
 
-def writeTypeRef(out_file, type):
+# some types must write the name within the type (i.e. function pointers)
+# so if there is a name, then it is needed while writing the type
+# this function returns True if the name was written, false otherwise
+def writeTypeRefAndNameIfRequired(out_file, type, name):
     kind = type["kind"]
     if kind == "native" or kind == "alias":
         out_file.write(type["name"])
-    else:
-        assert(kind == "singleptr" or kind == "arrayptr")
+        return False
+    if kind == "singleptr" or kind == "arrayptr":
         if type["const"]:
             out_file.write("const ")
-        writeTypeRef(out_file, type["subtype"])
+        name_written = writeTypeRefAndNameIfRequired(out_file, type["subtype"], name)
         out_file.write("*")
+        return name_written
+
+    assert(kind == "funcptr")
+    writeTypeRefNoName(out_file, type["return_type"])
+    out_file.write("(*{})(".format(name))
+    prefix = ""
+    for arg in type["args"]:
+        out_file.write(prefix)
+        writeTypeRefAndName(out_file, arg["type"], arg["name"])
+        prefix = ", "
+    out_file.write(")")
+    return True
+
+def writeTypeRefAndName(out_file, type, name):
+    if not writeTypeRefAndNameIfRequired(out_file, type, name):
+        out_file.write(" {}".format(name))
+
+def writeTypeRefNoName(out_file, type):
+    writeTypeRefAndNameIfRequired(out_file, type, "")
 
 def generateHeader(header):
     print("generating: {}".format(header.header_filename))
@@ -97,8 +119,8 @@ def generateHeader(header):
             kind = info["kind"]
             if kind == "typedef":
                 out_file.write("typedef ")
-                writeTypeRef(out_file, info["definition"])
-                out_file.write(" {};\n".format(name))
+                writeTypeRefAndName(out_file, info["definition"], name)
+                out_file.write(";\n")
             elif kind == "struct":
                 out_file.write("typedef struct {} {};\n".format(name, name))
             else:
@@ -114,7 +136,7 @@ def generateHeader(header):
                     out_file.write("#define {} {}\n".format(name, info["value"]))
                 else:
                     out_file.write("#define {} ((".format(name))
-                    writeTypeRef(out_file, type)
+                    writeTypeRefNoName(out_file, type)
                     out_file.write("){})\n".format(info["value"]))
         out_file.write("//\n")
         out_file.write("// structs\n")
@@ -127,8 +149,8 @@ def generateHeader(header):
                 out_file.write("struct {} {{\n".format(name))
                 for field in info["fields"]:
                     out_file.write("    ")
-                    writeTypeRef(out_file, field["type"])
-                    out_file.write(" {};\n".format(field["name"]))
+                    writeTypeRefAndName(out_file, field["type"], field["name"])
+                    out_file.write(";\n")
                 out_file.write("};\n")
             else:
                 assert(False)
@@ -138,13 +160,12 @@ def generateHeader(header):
             out_file.write("// functions\n")
             out_file.write("//\n")
             for name, info in functions:
-                writeTypeRef(out_file, info["return_type"])
+                writeTypeRefNoName(out_file, info["return_type"])
                 out_file.write(" {}(".format(name))
                 prefix = ""
                 for arg in info["args"]:
                     out_file.write("{}\n    ".format(prefix))
-                    writeTypeRef(out_file, arg["type"])
-                    out_file.write(" {}".format(arg["name"]))
+                    writeTypeRefAndName(out_file, arg["type"], arg["name"])
                     prefix = ","
                 out_file.write("\n);\n")
         out_file.write('#endif // __{}_header_guard__\n'.format(header.name))

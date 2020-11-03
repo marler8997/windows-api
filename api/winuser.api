@@ -1,5 +1,4 @@
-# TODO: support function pointer types!
-typedef void* WNDPROC;
+typedef funcptr LRESULT(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) WNDPROC;
 
 struct WNDCLASSA {
     UINT        style;

@@ -58,10 +58,9 @@ typedef HANDLE HLOCAL;
 typedef HANDLE GLOBALHANDLE;
 typedef HANDLE LOCALHANDLE;
 
-# TODO: define these function pointers:
-#typedef int (*FARPROC)();
-#typedef int (*NEARPROC)();
-#typedef int (*PROC)();
+typedef funcptr int() FARPROC;
+typedef funcptr int() NEARPROC;
+typedef funcptr int() PROC;
 
 typedef WORD ATOM;
 

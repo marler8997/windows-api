@@ -78,6 +78,12 @@ class ArrayPtrType(Type):
         self.const = const
     def __repr__(self):
         return "{}{}[]".format("const " if self.const else "", self.sub_type)
+class FuncPtrType(Type):
+    def __init__(self, return_type, args):
+        self.return_type = return_type
+        self.args = args
+    def __repr__(self):
+        return "funcptr {}({})".format(self.return_type, [", ".join(str(a)) for a in self.args])
 
 class Parser:
     def __init__(self, lexer: lex.Lexer):
@@ -166,6 +172,12 @@ class Parser:
         if token.kind != lex.ID:
             self.errAt(token, "expected type to start with ID but got: {}".format(token.desc(self.str)))
         token_str = self.str[token.start:token.end]
+        if token_str == "funcptr":
+            self.popToken()
+            return_type = self.parseType()
+            _ = self.peekPopKnownToken("to delimit funcptr args", (lex.LEFT_PAREN,))
+            args = self.parseFuncArgs()
+            return FuncPtrType(return_type, args)
         if token_str == "const":
             const = True
             self.popToken()
@@ -207,7 +219,7 @@ class Parser:
 
         return StructNode(struct_token, self.str[struct_name_token.start:struct_name_token.end], fields)
 
-    def parseFunc(self, first_token, return_type, func_name_token):
+    def parseFuncArgs(self):
         args = []
         while True:
             next_token = self.peekToken()
@@ -224,6 +236,9 @@ class Parser:
             elif maybe_comma_token.kind != lex.RIGHT_PAREN:
                 self.errAt(maybe_comma_token, "expected , or ) to finish function arguments but got {}".format(maybe_comma_token.desc(self.str)))
             args.append(ArgNode(arg_type, arg_name_token, self.str[arg_name_token.start:arg_name_token.end]))
-        _ = self.peekPopKnownToken("to finish function declaration", (lex.SEMICOLON,))
+        return args
 
+    def parseFunc(self, first_token, return_type, func_name_token):
+        args = self.parseFuncArgs()
+        _ = self.peekPopKnownToken("to finish function declaration", (lex.SEMICOLON,))
         return FuncNode(first_token, self.str[func_name_token.start:func_name_token.end], return_type, args)

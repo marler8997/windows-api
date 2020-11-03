@@ -26,6 +26,18 @@ HANDLE GetStdHandle(DWORD nStdHandle);
 struct POINT { UINT x; UINT y; }
 ```
 
+The more common a syntax is, the more reason there is for "C-ish" to support the C syntax.  One example where this isn't the case is function pointers, since they are rare and use an odd syntax, C-ish uses a different syntax for them.
+
+```
+// C
+TYPE (*NAME)(TYPE NAME, TYPE NAME, ...)
+// C-ish
+funcptr TYPE(TYPE NAME, TYPE NAME, ...)
+```
+
+C-ish maintains the property that a type can be fully parsed without knowing its surrounding context and with only 1 token lookahead.  Using `funcptr` to prefix a function pointer type allows this property to be maintained, and the modified syntax also allows function pointer types to be used like normal types, where the name of the thing being defined it outside the type (i.e. `funcptr void(...) NAME` rather than `void (*NAME)(...)`).
+
+
 You can declare a constant with a `void` type like this:
 ```c
 void FALSE = 0;

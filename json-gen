@@ -15,16 +15,19 @@ NATIVE_TYPE_MAP = {}
 for t in nativetypes.NATIVE_TYPES:
     NATIVE_TYPE_MAP[t] = True
 
-def typeToJsonData(type):
-    if isinstance(type, parse.NamedType):
-        if type.name in NATIVE_TYPE_MAP:
-            return {"kind":"native","name":type.name}
-        return {"kind":"alias","name":type.name}
-    if isinstance(type, parse.SinglePtrType):
-        return {"kind":"singleptr","const":type.const, "subtype":typeToJsonData(type.sub_type)}
-    if isinstance(type, parse.ArrayPtrType):
-        return {"kind":"arrayptr","const":type.const,"subtype":typeToJsonData(type.sub_type)}
-    raise Exception("unhandled type class {}".format(type(type).__name__))
+def typeToJsonData(t):
+    if isinstance(t, parse.NamedType):
+        if t.name in NATIVE_TYPE_MAP:
+            return {"kind":"native","name":t.name}
+        return {"kind":"alias","name":t.name}
+    if isinstance(t, parse.SinglePtrType):
+        return {"kind":"singleptr","const":t.const, "subtype":typeToJsonData(t.sub_type)}
+    if isinstance(t, parse.ArrayPtrType):
+        return {"kind":"arrayptr","const":t.const,"subtype":typeToJsonData(t.sub_type)}
+    if isinstance(t, parse.FuncPtrType):
+        return {"kind":"funcptr","return_type":typeToJsonData(t.return_type),"args":[
+            {"name":arg.name,"type":typeToJsonData(arg.type)} for arg in t.args]}
+    raise Exception("unhandled type class {}".format(type(t).__name__))
 
 def toJsonData(nodes):
     types = {}

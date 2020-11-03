@@ -81,6 +81,19 @@ def main():
     testParse("const int a(int b, int c,);")
     testParse("const int* a(int b, int c,);")
     testParse("const int[] a(int b, int c,);")
+
+    testSyntaxError("typedef funcptr", "line 1 col 16: expected type to start with ID but got: EOF")
+    testSyntaxError("typedef funcptr void", "line 1 col 21: expected ( to delimit funcptr args but got EOF")
+    testSyntaxError("typedef funcptr void(", "line 1 col 22: expected a function argument or ) but got EOF")
+    testSyntaxError("typedef funcptr void()", "line 1 col 23: expected ID after 'typedef TYPE' but got EOF")
+    testSyntaxError("typedef funcptr void() a", "line 1 col 25: expected ; to finish typedef but got EOF")
+    testParse("typedef funcptr void() a;")
+    testSyntaxError("typedef funcptr void(int", "line 1 col 25: expected ID after argument type but got EOF")
+    testSyntaxError("typedef funcptr void(int a", "line 1 col 27: expected , or ) to finish function arguments but got EOF")
+    testSyntaxError("typedef funcptr void(int a)", "line 1 col 28: expected ID after 'typedef TYPE' but got EOF")
+    testSyntaxError("typedef funcptr void(int a) a", "line 1 col 30: expected ; to finish typedef but got EOF")
+    testParse("typedef funcptr void(int a) a;")
+
     print("Success")
 
 main()
