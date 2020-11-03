@@ -1,12 +1,35 @@
-#!/usr/bin/env sh
+#!/usr/bin/env python3
+import os
+import sys
+import shutil
+import subprocess
 
-if [ "$CC" == "" ]; then
-   CC=gcc
-fi
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+OUT_DIR = os.path.join(REPO_ROOT, "out")
+DEPS_DIR = os.path.join(REPO_ROOT, "deps")
 
-rm -rf out/scratch
-mkdir -p out/scratch
-cat > out/scratch/main.c <<EOF
+EXE_EXT = ".exe" if os.name == "nt" else ""
+OBJ_EXT = ".obj" if os.name == "nt" else ".o"
+
+def run(cmd):
+    print("[RUN] {}".format(" ".join(cmd)))
+    subprocess.check_call(cmd)
+
+
+def windowsSamplesTest(compiler, c_headers_dir, test_dir):
+    samples_repo = os.path.join(DEPS_DIR, "Windows-classic-samples")
+    if not os.path.exists(samples_repo):
+        print("Error: samples repo not available: {}".format(samples_repo))
+        print("       download it with")
+        print("       git clone https://github.com/microsoft/Windows-classic-samples -b 166062 {}".format(samples_repo))
+        sys.exit(1)
+
+    src = os.path.join(samples_repo, "Samples", "BackgroundCopyFileProperties", "cpp", "BACKGROUNDCOPYFILEPROPERTIES.cpp")
+    #run([compiler.cc, compiler.out_option + os.path.join(test_dir , "test.o"), "-I" + c_headers_dir, "-c", src])
+
+def helloWorldTest(compiler, c_headers_dir, test_dir):
+    SRC = r"""
 #include <winbase.h>
 #include <fileapi.h>
 #include <processenv.h>
@@ -18,6 +41,47 @@ int main(int argc,char* argv[]) {
     WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), MSG, sizeof(MSG) - 1, &written, 0);
     return 0;
 }
-EOF
+"""
+    # hello world test
+    src = os.path.join(test_dir, "helloworld.c")
+    with open(src, "w") as file:
+        file.write(SRC)
 
-$CC -oout/scratch/main.o -Iout/c -c out/scratch/main.c
+    exe = os.path.join(test_dir , "helloworld" + EXE_EXT)
+    obj =  os.path.join(test_dir, "helloworld" + OBJ_EXT)
+    run([compiler.cc, compiler.out_option + exe, "/Fo" + obj, "-I" + c_headers_dir, src])
+    run([exe])
+
+
+class Compiler:
+    def __init__(self, cc, out_option):
+        self.cc = cc
+        self.out_option = out_option
+
+def main():
+    CC = os.getenv("CC")
+    if not CC:
+        if os.name == "nt":
+            CC = "cl"
+        else:
+            CC = "gcc"
+    print("CC is {}".format(CC))
+
+    if os.path.basename(CC) == "gcc":
+        out_option = "-o"
+    else:
+        out_option = "/Fe"
+
+    compiler = Compiler(CC, out_option)
+
+    c_headers_dir = os.path.join(OUT_DIR, "c")
+
+    test_dir = os.path.join(OUT_DIR, "c-headers-test")
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.makedirs(test_dir)
+
+    helloWorldTest(compiler, c_headers_dir, test_dir)
+    #windowsSamplesTest(compiler, c_headers_dir, test_dir)
+
+main()
