@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+import shutil
+import subprocess
+import re
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DUMPBIN_EXPORT_HEADER_REGEX = re.compile(b" *ordinal +hint +RVA +name")
+DUMPBIN_EXPORT_ENTRY_REGEX = re.compile(b" *([0-9A-F]+) +([0-9A-F]+) +([0-9A-F ]{8}) ([^ ]+) ?.*")
+
+def escapeArg(arg):
+    return '"{}"'.format(arg) if (" " in arg) else arg
+
+def cmdToString(cmd):
+    return " ".join([escapeArg(arg) for arg in cmd])
+
+def getFuncs(dll):
+    cmd = ["dumpbin", "/nologo", "/exports", dll]
+    try:
+        output = subprocess.check_output(cmd)
+    except subprocess.CalledProcessError as proc_err:
+        print("The following command failed:")
+        print("  {}".format(cmdToString(cmd)))
+        print("Output:")
+        print("--------------------------------------------------------------------------")
+        print(proc_err.output.decode('ascii'))
+        print()
+        print("--------------------------------------------------------------------------")
+        sys.exit(1)
+
+    lines = output.splitlines()
+
+    funcs = []
+
+    line_index = 0
+    while True:
+        if line_index == len(lines):
+            print("Error: failed to find export table in command output:")
+            print("  {}".format(cmdToString(cmd)))
+            sys.exit(1)
+        line = lines[line_index]
+        if DUMPBIN_EXPORT_HEADER_REGEX.match(line):
+            break
+        if line.strip().startswith(b"Summary"):
+            # no exports
+            return funcs
+        line_index += 1
+
+    while line_index < len(lines):
+        line_index += 1
+        line = lines[line_index].strip()
+        if line.startswith(b"Summary"):
+            break
+        if line:
+            if b"[NONAME]" in line:
+                continue
+            match = DUMPBIN_EXPORT_ENTRY_REGEX.match(line)
+            if not match:
+                print("Error: line did not match export entry regex '{}'".format(line))
+                print("See full output with:")
+                print("  {}".format(cmdToString(cmd)))
+                sys.exit(1)
+            full_match_str = match.group(0)
+            #print(line)
+            if len(full_match_str) != len(line):
+                sys.exit("Error: did not match full line({}) {} match({}) {}".format(
+                    len(line), line, len(full_match_str), full_match_str))
+            ordinal = int(match.group(1))
+            hint = match.group(2)
+            rva = match.group(3)
+            name = match.group(4)
+            #print("{} {} {} '{}'".format(ordinal, hint, rva, name))
+            funcs.append({"name":name.decode('ascii'),"ordinal":ordinal})
+    return funcs
+
+def processDll(out_dir, dll_filename, dll_name):
+    print("processing '{}'".format(dll_filename))
+    funcs = getFuncs(dll_filename)
+    if not funcs:
+        print("    this dll has no functions")
+        return
+    json_filename = os.path.join(out_dir, dll_name + ".json")
+    with open(json_filename, "w") as out_file:
+        out_file.write(json.dumps(funcs))
+
+KNOWN_DLLS = [
+    "ntdll",
+    "kernel32",
+    "user32",
+    "msvcrt",
+    "advapi32",
+    "ole32",
+    "oleaut32",
+    "rpcrt4",
+    "gdi32",
+    "shlwapi",
+    "shell32",
+    #"ws2_32",
+]
+
+def main():
+    try:
+        subprocess.check_call(["where", "dumpbin"])
+    except subprocess.CalledProcessError:
+        sys.exit("Error: unable to find 'dumpbin', are you in a VisualStudio Command Prompt?")
+
+    out_dir = os.path.join(SCRIPT_DIR, "out", "dll-json")
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
+    os.makedirs(out_dir)
+
+    dll_dir = "C:\\Windows\\System32"
+
+    only_known_dlls = True
+    if only_known_dlls:
+        for dll in KNOWN_DLLS:
+            processDll(out_dir, os.path.join(dll_dir, dll + ".dll"), dll)
+    else:
+        filter = [
+            # dumpbin unable to open these files for some reason?
+            "audiodev",
+            "camcodec", "compobj", "crtdll", "ctl3d32",
+            "d3d8", "d3dim", "d3dim700", "d3dramp", "d3dxof",
+            "dmband", "dmcompos", "dmime", "dmscript", "dmstyle",
+            "dplayx", "dpmodemx", "dpwsockx",
+            "expsrv",
+            "hha",
+            "iccvid", "iprop",
+            "ir32_32", "ir41_qc", "ir41_qcx", "ir50_qcx", "ir50_32", "ir50_qc",
+            "mfc40", "mfc40u", "msexch40", "msexcl40",
+            # multiple .text sections with different attributes
+            "mdminst", "modemui", "msieftp", "msjet40",
+        ]
+        for entry_base in os.listdir(dll_dir):
+            if ord(entry_base[0]) < ord('m'):
+                continue
+            if not entry_base.endswith(".dll"):
+                continue
+            name = entry_base[:-4]
+            entry = os.path.join(dll_dir, entry_base)
+            if name in filter:
+                print("skipping '{}'".format(entry))
+                continue
+            processDll(out_dir, entry, name)
+
+main()

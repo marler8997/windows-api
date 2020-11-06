@@ -74,3 +74,7 @@ The following native types are supported and will appear the same way in the res
 * `int8_t`, `int16_t`, `int32_t`, `int64_t`, `ssize_t`: signed integer types
 * `char`: 8-bit windows ANSI character
 * `wchar_t`: 16-bit unicode character
+
+# Function to DLL Table
+
+The "C-ish" files more or less represent what is in the Windows SDK C/C++ header files, however, these header files don't specify what DLL functions are contained in.  Rather than enhancing the "C-ish" syntax to support DLL specification, it would be easy to create a small automated tool to gather this information.  It's relatively simple and fast to dump all the function exports in all the relevant DLLs on a Windows system, so I've created the `dll-json-gen` script that dumps all the DLL function exports into a set of json files, one for each DLL.
