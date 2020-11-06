@@ -77,7 +77,7 @@ class ArrayPtrType(Type):
         self.sub_type = sub_type
         self.const = const
     def __repr__(self):
-        return "{}{}[]".format("const " if self.const else "", self.sub_type)
+        return "{}{}[*]".format("const " if self.const else "", self.sub_type)
 class FuncPtrType(Type):
     def __init__(self, return_type, args):
         self.return_type = return_type
@@ -194,6 +194,7 @@ class Parser:
                 self.popToken()
             elif mod_token.kind == lex.LEFT_BRACKET:
                 self.popToken()
+                _ = self.peekPopKnownToken("after open bracket '['", (lex.STAR,))
                 _ = self.peekPopKnownToken("to finish array type", (lex.RIGHT_BRACKET,))
                 type = ArrayPtrType(type, const)
             else:

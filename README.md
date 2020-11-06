@@ -50,7 +50,7 @@ void TRUE = 1;
 ```
 This means the constant has no "type", it's just a typeless value.
 
-Also, intead of pointer types like `T*`, you can specify `T[]` to indicate a pointer to an array of multiple items.
+Also, instead of pointer types like `T*`, you can specify `T[*]` to indicate a pointer to an array of multiple items.
 
 # TODO:
 
