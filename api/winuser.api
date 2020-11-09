@@ -2,11 +2,11 @@ typedef HANDLE HDWP;
 
 typedef VOID MENUTEMPLATEA;
 typedef VOID MENUTEMPLATEW;
-# unicode MENUTEMPLATE;
+@unicode MENUTEMPLATE;
 
 typedef PVOID LPMENUTEMPLATEA;
 typedef PVOID LPMENUTEMPLATEW;
-# unicode LPMENUTEMPLATE;
+@unicode LPMENUTEMPLATE;
 
 typedef funcptr LRESULT(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) WNDPROC;
 
@@ -20,15 +20,18 @@ typedef funcptr VOID(HWND hwnd, UINT uMsg, ULONG_PTR uParam, LRESULT lResult) SE
 
 typedef funcptr BOOL(HWND hwnd, LPCSTR a, HANDLE b) PROPENUMPROCA;
 typedef funcptr BOOL(HWND hwnd, LPCWSTR a, HANDLE b) PROPENUMPROCW;
-#unicode PROPENUMPROC;
+@unicode PROPENUMPROC;
 
 typedef funcptr BOOL(HWND hwnd, LPSTR a, HANDLE b, ULONG_PTR c) PROPENUMPROCEXA;
 typedef funcptr BOOL(HWND hwnd, LPWSTR a, HANDLE b, ULONG_PTR c) PROPENUMPROCEXW;
-#unicode PROPENUMPROCEX;
+@unicode PROPENUMPROCEX;
 
 typedef funcptr int(LPSTR lpch, int ichCurrent, int cch, int code) EDITWORDBREAKPROCA;
 typedef funcptr int(LPWSTR lpch, int ichCurrent, int cch, int code) EDITWORDBREAKPROCW;
-#unicode EDITWORDBREAKPROC;
+@unicode EDITWORDBREAKPROC;
+
+#@winver >= 0x400
+#typedef BOOL (HDC hdc, LPARAM lData, WPARAM wData, int cx, int cy) DRAWSTATEPROC;
 
 struct WNDCLASSA {
     UINT        style;
@@ -62,5 +65,4 @@ typedef WNDCLASSW PWNDCLASSW;
 typedef WNDCLASSW NPWNDCLASSW;
 typedef WNDCLASSW LPWNDCLASSW;
 
-# TODO: implement the unicode directive
-#unicode WNDCLASS;
+@unicode WNDCLASS;

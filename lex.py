@@ -1,5 +1,6 @@
 TOKEN_KINDS = (
     ("ID",None),
+    ("ID_SPECIAL",None),
     ("NUMBER",None),
     ("LEFT_PAREN","("),
     ("RIGHT_PAREN",")"),
@@ -86,7 +87,7 @@ class Lexer:
 
         if c >= ord('a'):
             if c <= ord('z'):
-                return lexId(self.reader)
+                return self.lexId(False)
             if c == ord('{'):
                 return popSingleCharToken(self.reader, LEFT_CURLY)
             if c == ord('}'):
@@ -104,14 +105,14 @@ class Lexer:
                 return popSingleCharToken(self.reader, RIGHT_BRACKET)
             return popSingleCharToken(self.reader, UNSUPPORTED)
         if c >= ord('A'):
-            return lexId(self.reader)
+            return self.lexId(False)
         if c > ord('9'):
             if c == ord(';'):
                return popSingleCharToken(self.reader, SEMICOLON)
             elif c == ord('='):
                 return popSingleCharToken(self.reader, EQUAL)
             elif c == ord('@'):
-                return popSingleCharToken(self.reader, AT)
+                return self.lexId(True)
             else:
                 return popSingleCharToken(self.reader, UNSUPPORTED)
         if c >= ord('0'):
@@ -181,6 +182,16 @@ class Lexer:
         end = self.reader.getPosition()
         return StringToken(start, end, chars.decode('utf8'))
 
+    def lexId(self, is_special):
+        start = self.reader.getPosition()
+        if is_special:
+            self.reader.pop()
+            c = self.reader.peek()
+            if not isIdChar(c):
+                self.errAt(self.reader.getPosition(), "expected an ID char after '@' but got '{}' (ascii code {})".format(chr(c), c))
+        scanWhile(self.reader, isIdChar)
+        return Token(ID_SPECIAL if is_special else ID, start, self.reader.getPosition())
+
 # assumption: reader is not at EOF
 # returns: False on EOF
 def scanWhile(reader, condition):
@@ -190,11 +201,6 @@ def scanWhile(reader, condition):
             return False
         if not condition(reader.peek()):
             return True
-
-def lexId(reader):
-    start = reader.getPosition()
-    scanWhile(reader, isIdChar)
-    return Token(ID, start, reader.getPosition())
 
 def isOctalChar(c):
     return c >= ord('0') and c <= ord('7')

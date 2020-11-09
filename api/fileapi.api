@@ -30,9 +30,7 @@ BOOL CreateDirectoryW(
     LPCWSTR lpPathName,
     LPSECURITY_ATTRIBUTES lpSecurityAttributes
 );
-
-# TODO:
-# unicode CreateDirectory
+@unicode CreateDirectory;
 
 HANDLE CreateFileA(
     LPCSTR lpFileName,
@@ -53,27 +51,21 @@ HANDLE CreateFileW(
     DWORD dwFlagsAndAttributes,
     HANDLE hTemplateFile
 );
-
-# TODO:
-# unicode CreateFile
+@unicode CreateFile;
 
 BOOL DefineDosDeviceW(
     DWORD dwFlags,
     LPCWSTR lpDeviceName,
     LPCWSTR lpTargetPath
 );
-
-# TODO:
-# unicode DefineDosDevice
+@unicode DefineDosDevice;
 
 BOOL DeleteFileA(LPCSTR lpFileName);
 BOOL DeleteFileW(LPCWSTR lpFileName);
-# TODO:
-# unicode DeleteFile
+@unicode DeleteFile;
 
 BOOL DeleteVolumeMountPointW(LPCWSTR lpszVolumeMountPoint);
-# TODO:
-# unicode DeleteVolumeMountPoint
+@unicode DeleteVolumeMountPoint;
 
 BOOL FileTimeToLocalFileTime(
     const FILETIME* lpFileTime,
@@ -94,5 +86,4 @@ HANDLE FindFirstChangeNotificationW(
     BOOL bWatchSubtree,
     DWORD dwNotifyFilter
 );
-# TODO:
-# unicode FindFirstChangeNotification
+@unicode FindFirstChangeNotification;

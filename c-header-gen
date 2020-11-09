@@ -92,6 +92,9 @@ def writeTypeRefAndName(out_file, type, name):
 def writeTypeRefNoName(out_file, type):
     writeTypeRefAndNameIfRequired(out_file, type, "")
 
+NAME_KIND_TYPE = 1
+NAME_KIND_FUNC = 2
+
 def generateHeader(header):
     print("generating: {}".format(header.header_filename))
     with open(header.header_filename, "w") as out_file:
@@ -111,6 +114,7 @@ def generateHeader(header):
         # write typedefs
         for i in header.imports:
             out_file.write("#include <{}.h>\n".format(i.name))
+        name_kind_map = {}
         types = header.jsondata["types"]
         out_file.write("//\n")
         out_file.write("// typedefs\n")
@@ -118,6 +122,7 @@ def generateHeader(header):
         for info in types:
             kind = info["kind"]
             name = info["name"]
+            name_kind_map[name] = NAME_KIND_TYPE
             if kind == "typedef":
                 out_file.write("typedef ")
                 writeTypeRefAndName(out_file, info["definition"], name)
@@ -159,10 +164,12 @@ def generateHeader(header):
         functions = header.jsondata["functions"]
         if len(functions) > 0:
             out_file.write("//\n")
-            out_file.write("// functions\n")
+            out_file.write("// {} functions\n".format(len(functions)))
             out_file.write("//\n")
             for info in functions:
                 writeTypeRefNoName(out_file, info["return_type"])
+                func_name = info["name"]
+                name_kind_map[func_name] = NAME_KIND_FUNC
                 out_file.write(" {}(".format(info["name"]))
                 prefix = ""
                 for arg in info["args"]:
@@ -170,6 +177,32 @@ def generateHeader(header):
                     writeTypeRefAndName(out_file, arg["type"], arg["name"])
                     prefix = ","
                 out_file.write("\n);\n")
+        unicode_names = header.jsondata["unicode_names"]
+        if len(unicode_names) > 0:
+            def printUnicodeDefs(suffix, other_suffix):
+                for name_obj in unicode_names:
+                    unicode_name = name_obj["name"]
+                    name_with_suffix = unicode_name + suffix
+                    kind = name_kind_map.get(name_with_suffix)
+                    if kind == None:
+                        other_name_with_suffix = unicode_name + other_suffix
+                        if name_kind_map.get(other_name_with_suffix) == None:
+                            sys.exit("Error: invalid @unicode '{}' because neither '{}' nor '{}' exist as a type/function".format(unicode_name, name_with_suffix, other_name_with_suffix))
+                        out_file.write("    // symbol '{}' does not exist, only '{}' does\n".format(name_with_suffix, other_name_with_suffix))
+                    elif kind == NAME_KIND_TYPE:
+                        out_file.write("    typedef {} {};\n".format(name_with_suffix, unicode_name))
+                    else:
+                        assert(kind == NAME_KIND_FUNC)
+                        out_file.write("    #define {} {}\n".format(unicode_name, name_with_suffix))
+
+            out_file.write("//\n")
+            out_file.write("// {} unicode_names\n".format(len(unicode_names)))
+            out_file.write("//\n")
+            out_file.write("#ifdef UNICODE\n")
+            printUnicodeDefs("W", "A")
+            out_file.write("#else // UNICODE\n")
+            printUnicodeDefs("A", "W")
+            out_file.write("#endif // UNICODE\n")
         out_file.write('#endif // __{}_header_guard__\n'.format(header.name))
 
 def main():

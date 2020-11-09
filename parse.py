@@ -59,6 +59,14 @@ class ArgNode(Node):
     def getToken(self):
         return self.name_token
 
+class UnicodeNode(Node):
+    def __init__(self, unicode_token, name):
+        Node.__init__(self)
+        self.name = name
+    def getToken(self):
+        return self.unicode_token
+
+
 class Type:
     pass
 class NamedType(Type):
@@ -132,6 +140,11 @@ class Parser:
             if id == "struct":
                 self.popToken()
                 return self.parseStruct(first_token)
+        if first_token.kind == lex.ID_SPECIAL:
+            id = self.str[first_token.start:first_token.end]
+            if id == "@unicode":
+                self.popToken()
+                return self.parseUnicode(first_token)
 
         #
         # must be a function or constant
@@ -149,6 +162,11 @@ class Parser:
             return self.parseFunc(first_token, type, name_token)
 
         self.errAt(first_token, "expected '=' or '(' after 'TYPE ID' but got {}".format(punctuation_token.desc(self.str)))
+
+    def parseUnicode(self, unicode_token):
+        name_token = self.peekPopKnownToken("after @unicode", (lex.ID,))
+        _ = self.peekPopKnownToken("after @unicode ID", (lex.SEMICOLON,))
+        return UnicodeNode(unicode_token, self.str[name_token.start:name_token.end])
 
     def parseConstValue(self):
         token = self.peekToken()

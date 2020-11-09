@@ -29,6 +29,8 @@ def testParse(src):
     parser.parseInto(nodes)
     
 def main():
+    testSyntaxError("@!", "line 1 col 2: expected an ID char after '@' but got '!' (ascii code 33)")
+
     testSyntaxError("typedef", "line 1 col 8: expected type to start with ID but got: EOF")
     testSyntaxError("typedef int", "line 1 col 12: expected ID after 'typedef TYPE' but got EOF")
     testSyntaxError("typedef int a", "line 1 col 14: expected ; to finish typedef but got EOF")
@@ -94,6 +96,10 @@ def main():
     testSyntaxError("typedef funcptr void(int a)", "line 1 col 28: expected ID after 'typedef TYPE' but got EOF")
     testSyntaxError("typedef funcptr void(int a) a", "line 1 col 30: expected ; to finish typedef but got EOF")
     testParse("typedef funcptr void(int a) a;")
+
+    testSyntaxError("@unicode", "line 1 col 9: expected ID after @unicode but got EOF")
+    testSyntaxError("@unicode a", "line 1 col 11: expected ; after @unicode ID but got EOF")
+    testParse("@unicode a;")
 
     print("Success")
 

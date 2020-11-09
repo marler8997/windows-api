@@ -33,6 +33,7 @@ def toJsonData(nodes):
     types = []
     constants = []
     functions = []
+    unicode_names = []
     for node in nodes:
         if isinstance(node, parse.TypedefNode):
             types.append({"kind":"typedef","name":node.name,"definition":typeToJsonData(node.def_type)})
@@ -44,9 +45,11 @@ def toJsonData(nodes):
         elif isinstance(node, parse.FuncNode):
             functions.append({"name":node.name,"return_type":typeToJsonData(node.return_type),
                               "args":[{"type":typeToJsonData(arg.type),"name":arg.name} for arg in node.args]})
+        elif isinstance(node, parse.UnicodeNode):
+            unicode_names.append({"name":node.name})
         else:
             raise Exception("unhandled node {}".format(type(node).__name__))
-    return {"types":types,"constants":constants,"functions":functions}
+    return {"types":types,"constants":constants,"functions":functions,"unicode_names":unicode_names}
 
 def processFile(out_dir, filename):
     name = os.path.basename(filename)[:-4]
