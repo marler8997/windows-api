@@ -1,4 +1,34 @@
+typedef HANDLE HDWP;
+
+typedef VOID MENUTEMPLATEA;
+typedef VOID MENUTEMPLATEW;
+# unicode MENUTEMPLATE;
+
+typedef PVOID LPMENUTEMPLATEA;
+typedef PVOID LPMENUTEMPLATEW;
+# unicode LPMENUTEMPLATE;
+
 typedef funcptr LRESULT(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) WNDPROC;
+
+typedef funcptr INT_PTR(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) DLGPROC;
+
+typedef funcptr VOID(HWND hwnd, UINT uMsg, UINT_PTR uId, DWORD dwMillis) TIMERPROC;
+typedef funcptr BOOL(HDC hDc, LPARAM lString, int nLen) GRAYSTRINGPROC;
+typedef funcptr BOOL(HWND hwnd, LPARAM lParam) WNDENUMPROC;
+typedef funcptr LRESULT(int code, WPARAM wParam, LPARAM lParam) HOOKPROC;
+typedef funcptr VOID(HWND hwnd, UINT uMsg, ULONG_PTR uParam, LRESULT lResult) SENDASYNCPROC;
+
+typedef funcptr BOOL(HWND hwnd, LPCSTR a, HANDLE b) PROPENUMPROCA;
+typedef funcptr BOOL(HWND hwnd, LPCWSTR a, HANDLE b) PROPENUMPROCW;
+#unicode PROPENUMPROC;
+
+typedef funcptr BOOL(HWND hwnd, LPSTR a, HANDLE b, ULONG_PTR c) PROPENUMPROCEXA;
+typedef funcptr BOOL(HWND hwnd, LPWSTR a, HANDLE b, ULONG_PTR c) PROPENUMPROCEXW;
+#unicode PROPENUMPROCEX;
+
+typedef funcptr int(LPSTR lpch, int ichCurrent, int cch, int code) EDITWORDBREAKPROCA;
+typedef funcptr int(LPWSTR lpch, int ichCurrent, int cch, int code) EDITWORDBREAKPROCW;
+#unicode EDITWORDBREAKPROC;
 
 struct WNDCLASSA {
     UINT        style;

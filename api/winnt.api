@@ -1,9 +1,12 @@
+typedef void VOID;
+typedef void* PVOID;
+
 typedef char CHAR;
 typedef CHAR[*] LPCSTR;
 
 typedef wchar_t WCHAR;
 typedef WCHAR[*] PWSTR;
 typedef WCHAR[*] LPWSTR;
-typedef const WCHAR* LPCWSTR;
+typedef const WCHAR[*] LPCWSTR;
 
 typedef void* HANDLE;
