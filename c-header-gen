@@ -73,17 +73,23 @@ def writeTypeRefAndNameIfRequired(out_file, type, name):
         name_written = writeTypeRefAndNameIfRequired(out_file, type["subtype"], name)
         out_file.write("*")
         return name_written
-
-    assert(kind == "funcptr")
-    writeTypeRefNoName(out_file, type["return_type"])
-    out_file.write("(*{})(".format(name))
-    prefix = ""
-    for arg in type["args"]:
-        out_file.write(prefix)
-        writeTypeRefAndName(out_file, arg["type"], arg["name"])
-        prefix = ", "
-    out_file.write(")")
-    return True
+    if kind == "funcptr":
+        writeTypeRefNoName(out_file, type["return_type"])
+        out_file.write("(*{})(".format(name))
+        prefix = ""
+        for arg in type["args"]:
+            out_file.write(prefix)
+            writeTypeRefAndName(out_file, arg["type"], arg["name"])
+            prefix = ", "
+        out_file.write(")")
+        return True
+    if kind == "fixedlenarray":
+        name_written = writeTypeRefAndNameIfRequired(out_file, type["subtype"], name)
+        if not name_written:
+            out_file.write(" {}".format(name))
+        out_file.write("[{}]".format(type["len"]))
+        return True
+    assert(False)
 
 def writeTypeRefAndName(out_file, type, name):
     if not writeTypeRefAndNameIfRequired(out_file, type, name):

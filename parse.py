@@ -92,6 +92,12 @@ class FuncPtrType(Type):
         self.args = args
     def __repr__(self):
         return "funcptr {}({})".format(self.return_type, [", ".join(str(a)) for a in self.args])
+class FixedLenArrayType(Type):
+    def __init__(self, sub_type, len):
+        self.sub_type = sub_type
+        self.len = len
+    def __repr__(self):
+        return "{}[{}]".format(self.sub_type, self.len)
 
 class Parser:
     def __init__(self, lexer: lex.Lexer):
@@ -175,7 +181,7 @@ class Parser:
             return "-" + self.parseConstValue()
         if token.kind == lex.NUMBER:
             self.popToken()
-            return token.value
+            return token.value_str
         self.errAt(token, "expected a constant value but got {}".format(token.desc(self.str)))
 
     def parseTypedef(self, typedef_token):
@@ -197,6 +203,7 @@ class Parser:
             args = self.parseFuncArgs()
             return FuncPtrType(return_type, args)
         if token_str == "const":
+            const_token = token
             const = True
             self.popToken()
             token = self.peekToken()
@@ -212,9 +219,19 @@ class Parser:
                 self.popToken()
             elif mod_token.kind == lex.LEFT_BRACKET:
                 self.popToken()
-                _ = self.peekPopKnownToken("after open bracket '['", (lex.STAR,))
-                _ = self.peekPopKnownToken("to finish array type", (lex.RIGHT_BRACKET,))
-                type = ArrayPtrType(type, const)
+                array_len_token = self.peekToken()
+                if array_len_token.kind == lex.STAR:
+                    self.popToken()
+                    _ = self.peekPopKnownToken("to finish array pointer '[*' type", (lex.RIGHT_BRACKET,))
+                    type = ArrayPtrType(type, const)
+                elif array_len_token.kind == lex.NUMBER:
+                    self.popToken()
+                    _ = self.peekPopKnownToken("to finish static array type", (lex.RIGHT_BRACKET,))
+                    if const:
+                        self.errAt(const_token, "static array types cannot be const")
+                    type = FixedLenArrayType(type, array_len_token.value)
+                else:
+                    self.errAt(array_len_token, "expected '*' or NUMBER after '[' but got {}".format(array_len_token.desc(self.str)))
             else:
                 break
         return type

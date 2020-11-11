@@ -288,8 +288,7 @@ struct PAINTSTRUCT {
     RECT        rcPaint;
     BOOL        fRestore;
     BOOL        fIncUpdate;
-    # TODO: implement static sized arrays
-    #BYTE[32]    rgbReserved[32];
+    BYTE[32]    rgbReserved;
 }
 typedef PAINTSTRUCT* PPAINTSTRUCT;
 typedef PAINTSTRUCT* NPPAINTSTRUCT;

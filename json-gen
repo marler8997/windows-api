@@ -27,6 +27,8 @@ def typeToJsonData(t):
     if isinstance(t, parse.FuncPtrType):
         return {"kind":"funcptr","return_type":typeToJsonData(t.return_type),"args":[
             {"name":arg.name,"type":typeToJsonData(arg.type)} for arg in t.args]}
+    if isinstance(t, parse.FixedLenArrayType):
+        return {"kind":"fixedlenarray","len":t.len,"subtype":typeToJsonData(t.sub_type)}
     raise Exception("unhandled type class {}".format(type(t).__name__))
 
 def toJsonData(nodes):

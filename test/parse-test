@@ -29,6 +29,10 @@ def testParse(src):
     parser.parseInto(nodes)
     
 def main():
+    testParse("void a = 0;")
+    testParse("void a = 90;")
+    testParse("void a = 0x0;")
+    testParse("void a = 0x09afAF;")
     testSyntaxError("@!", "line 1 col 2: expected an ID char after '@' but got '!' (ascii code 33)")
 
     testSyntaxError("typedef", "line 1 col 8: expected type to start with ID but got: EOF")
@@ -36,13 +40,16 @@ def main():
     testSyntaxError("typedef int a", "line 1 col 14: expected ; to finish typedef but got EOF")
     testParse("typedef int a;")
     testParse("typedef int* a;")
-    testSyntaxError("typedef int[", "line 1 col 13: expected * after open bracket '[' but got EOF")
-    testSyntaxError("typedef int[*", "line 1 col 14: expected ] to finish array type but got EOF")
+    testSyntaxError("typedef int[", "line 1 col 13: expected '*' or NUMBER after '[' but got EOF")
+    testSyntaxError("typedef int[*", "line 1 col 14: expected ] to finish array pointer '[*' type but got EOF")
+    testSyntaxError("typedef int[100", "line 1 col 16: expected ] to finish static array type but got EOF")
     testParse("typedef int[*] a;")
+    testParse("typedef int[100] a;")
 
     testParse("typedef const int a;")
     testParse("typedef const int* a;")
     testParse("typedef const int[*] a;")
+    testSyntaxError("typedef const int[100] a;", "line 1 col 9: static array types cannot be const")
 
     testSyntaxError("struct", "line 1 col 7: expected ID after 'struct' but got EOF")
     testSyntaxError("struct a", "line 1 col 9: expected { after 'struct ID' but got EOF")

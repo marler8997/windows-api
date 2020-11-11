@@ -59,8 +59,9 @@ class StringToken(Token):
         return "STRING {}".format(str[self.start:self.end])
 
 class NumberToken(Token):
-    def __init__(self, start, end, value):
+    def __init__(self, start, end, value_str, value):
         Token.__init__(self, NUMBER, start, end)
+        self.value_str = value_str
         self.value = value
     def desc(self, str):
         return "NUMBER {}".format(str[self.start:self.end])
@@ -216,6 +217,7 @@ def isHexChar(c):
 def lexNumber(reader):
     start = reader.getPosition()
     c = reader.peek()
+    is_hex = False
     if c != ord('0'):
         scanWhile(reader, isDecimalChar)
     else:
@@ -223,12 +225,19 @@ def lexNumber(reader):
         if not reader.atEof():
             c = reader.peek()
             if c == ord("x") or c == ord("X"):
+                is_hex = True
                 scanWhile(reader, isHexChar)
             elif isOctalChar(c):
+                raise Exception("octal integers not implemetned")
                 scanWhile(reader, isOctalChar)
 
     end = reader.getPosition()
-    return NumberToken(start, end, reader.str[start:end])
+    value_str = reader.str[start:end]
+    if is_hex:
+        value = int(value_str, 16)
+    else:
+        value = int(value_str)
+    return NumberToken(start, end, value_str, value)
 
 def isNonQuoteChar(c):
     return c != ord('"')
