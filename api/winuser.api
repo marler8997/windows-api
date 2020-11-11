@@ -66,3 +66,456 @@ typedef WNDCLASSW NPWNDCLASSW;
 typedef WNDCLASSW LPWNDCLASSW;
 
 @unicode WNDCLASS;
+
+struct MSG {
+    HWND        hwnd;
+    UINT        message;
+    WPARAM      wParam;
+    LPARAM      lParam;
+    DWORD       time;
+    POINT       pt;
+#ifdef _MAC
+#    DWORD       lPrivate;
+#endif
+}
+typedef MSG* PMSG;
+typedef MSG* NPMSG;
+typedef MSG* LPMSG;
+
+#
+# Window Messages
+#
+void WM_NULL           = 0x0000;
+void WM_CREATE         = 0x0001;
+void WM_DESTROY        = 0x0002;
+void WM_MOVE           = 0x0003;
+void WM_SIZE           = 0x0005;
+
+void WM_ACTIVATE       = 0x0006;
+void WA_INACTIVE       = 0;
+void WA_ACTIVE         = 1;
+void WA_CLICKACTIVE    = 2;
+
+void WM_SETFOCUS       = 0x0007;
+void WM_KILLFOCUS      = 0x0008;
+void WM_ENABLE         = 0x000A;
+void WM_SETREDRAW      = 0x000B;
+void WM_SETTEXT        = 0x000C;
+void WM_GETTEXT        = 0x000D;
+void WM_GETTEXTLENGTH  = 0x000E;
+void WM_PAINT          = 0x000F;
+void WM_CLOSE          = 0x0010;
+void WM_QUIT           = 0x0012;
+void WM_ERASEBKGND     = 0x0014;
+void WM_SYSCOLORCHANGE = 0x0015;
+void WM_SHOWWINDOW     = 0x0018;
+void WM_WININICHANGE   = 0x001A;
+#if(WINVER >= 0x0400)
+#void WM_SETTINGCHANGE  = WM_WININICHANGE;
+
+void WM_DEVMODECHANGE  = 0x001B;
+void WM_ACTIVATEAPP    = 0x001C;
+void WM_FONTCHANGE     = 0x001D;
+void WM_TIMECHANGE     = 0x001E;
+void WM_CANCELMODE     = 0x001F;
+void WM_SETCURSOR      = 0x0020;
+void WM_MOUSEACTIVATE  = 0x0021;
+void WM_CHILDACTIVATE  = 0x0022;
+void WM_QUEUESYNC      = 0x0023;
+
+void WM_GETMINMAXINFO  = 0x0024;
+#
+# Struct pointed to by WM_GETMINMAXINFO lParam
+#
+struct MINMAXINFO {
+    POINT ptReserved;
+    POINT ptMaxSize;
+    POINT ptMaxPosition;
+    POINT ptMinTrackSize;
+    POINT ptMaxTrackSize;
+}
+typedef MINMAXINFO* PMINMAXINFO;
+typedef MINMAXINFO* LPMINMAXINFO;
+
+void WM_PAINTICON       = 0x0026;
+void WM_ICONERASEBKGND  = 0x0027;
+void WM_NEXTDLGCTL      = 0x0028;
+void WM_SPOOLERSTATUS   = 0x002A;
+void WM_DRAWITEM        = 0x002B;
+void WM_MEASUREITEM     = 0x002C;
+void WM_DELETEITEM      = 0x002D;
+void WM_VKEYTOITEM      = 0x002E;
+void WM_CHARTOITEM      = 0x002F;
+void WM_SETFONT         = 0x0030;
+void WM_GETFONT         = 0x0031;
+void WM_SETHOTKEY       = 0x0032;
+void WM_GETHOTKEY       = 0x0033;
+void WM_QUERYDRAGICON   = 0x0037;
+void WM_COMPAREITEM     = 0x0039;
+#if(WINVER >= 0x0500)
+void WM_GETOBJECT       = 0x003D;
+void WM_COMPACTING        = 0x0041;
+void WM_COMMNOTIFY        = 0x0044;  # no longer suported
+void WM_WINDOWPOSCHANGING = 0x0046;
+void WM_WINDOWPOSCHANGED  = 0x0047;
+
+void WM_POWER  = 0x0047;
+#
+# wParam for WM_POWER window message and DRV_POWER driver notification
+#
+void PWR_OK             = 1;
+void PWR_FAIL           = -1;
+void PWR_SUSPENDREQUEST = 1;
+void PWR_SUSPENDRESUME  = 2;
+void PWR_CRITICALRESUME = 3;
+
+
+BOOL GetMessageA(
+    LPMSG lpMsg,
+    HWND hWnd,
+    UINT wMsgFilterMin,
+    UINT wMsgFilterMax
+);
+BOOL GetMessageW(
+    LPMSG lpMsg,
+    HWND hWnd,
+    UINT wMsgFilterMin,
+    UINT wMsgFilterMax
+);
+@unicode GetMessage;
+
+
+
+BOOL TranslateMessage(
+    const MSG* lpMsg);
+
+
+LRESULT DispatchMessageA(const MSG* lpMsg);
+LRESULT DispatchMessageW(const MSG* lpMsg);
+@unicode DispatchMessage;
+
+BOOL SetMessageQueue(int cMessagesMax);
+
+BOOL PeekMessageA(
+    LPMSG lpMsg,
+    HWND hWnd,
+    UINT wMsgFilterMin,
+    UINT wMsgFilterMax,
+    UINT wRemoveMsg
+);
+BOOL PeekMessageW(
+    LPMSG lpMsg,
+    HWND hWnd,
+    UINT wMsgFilterMin,
+    UINT wMsgFilterMax,
+    UINT wRemoveMsg
+);
+@unicode PeekMessage;
+
+void PM_NOREMOVE     = 0x0000;
+void PM_REMOVE       = 0x0001;
+void PM_NOYIELD      = 0x0002;
+
+
+# WINVER >= 0x0500
+#void PM_QS_INPUT        = QS_INPUT << 16;
+# WINVER >= 0x0500
+#void PM_QS_POSTMESSAGE  = (QS_POSTMESSAGE | QS_HOTKEY | QS_TIMER) << 16;
+# WINVER >= 0x0500
+#void PM_QS_PAINT        = QS_PAINT << 16;
+# WINVER >= 0x0500
+#void PM_QS_SENDMESSAGE  = QS_SENDMESSAGE << 16;
+
+
+
+#
+# Window Styles
+#
+void WS_OVERLAPPED    = 0x00000000;
+void WS_POPUP         = 0x80000000;
+void WS_CHILD         = 0x40000000;
+void WS_MINIMIZE      = 0x20000000;
+void WS_VISIBLE       = 0x10000000;
+void WS_DISABLED      = 0x08000000;
+void WS_CLIPSIBLINGS  = 0x04000000;
+void WS_CLIPCHILDREN  = 0x02000000;
+void WS_MAXIMIZE      = 0x01000000;
+void WS_CAPTION       = 0x00C00000; # WS_BORDER | WS_DLGFRAME
+void WS_BORDER        = 0x00800000;
+void WS_DLGFRAME      = 0x00400000;
+void WS_VSCROLL       = 0x00200000;
+void WS_HSCROLL       = 0x00100000;
+void WS_SYSMENU       = 0x00080000;
+void WS_THICKFRAME    = 0x00040000;
+void WS_GROUP         = 0x00020000;
+void WS_TABSTOP       = 0x00010000;
+
+void WS_MINIMIZEBOX   = 0x00020000;
+void WS_MAXIMIZEBOX   = 0x00010000;
+
+#void WS_TILED        = WS_OVERLAPPED;
+#void WS_ICONIC       = WS_MINIMIZE;
+#void WS_SIZEBOX      = WS_THICKFRAME;
+#void WS_TILEDWINDOW  = WS_OVERLAPPEDWINDOW;
+
+#
+# Common Window Styles
+#
+##define WS_OVERLAPPEDWINDOW (WS_OVERLAPPED     | \
+#                             WS_CAPTION        | \
+#                             WS_SYSMENU        | \
+#                             WS_THICKFRAME     | \
+#                             WS_MINIMIZEBOX    | \
+#                             WS_MAXIMIZEBOX)
+#
+##define WS_POPUPWINDOW      (WS_POPUP          | \
+#                             WS_BORDER         | \
+#                             WS_SYSMENU)
+#
+##define WS_CHILDWINDOW      (WS_CHILD)
+
+
+struct ACCEL {
+    WORD   fVirt; # Also called the flags field
+    WORD   key;
+    DWORD  cmd;
+}
+typedef ACCEL* LPACCEL;
+
+struct PAINTSTRUCT {
+    HDC         hdc;
+    BOOL        fErase;
+    RECT        rcPaint;
+    BOOL        fRestore;
+    BOOL        fIncUpdate;
+    # TODO: implement static sized arrays
+    #BYTE[32]    rgbReserved[32];
+}
+typedef PAINTSTRUCT* PPAINTSTRUCT;
+typedef PAINTSTRUCT* NPPAINTSTRUCT;
+typedef PAINTSTRUCT* LPPAINTSTRUCT;
+
+struct CREATESTRUCTA {
+    LPVOID      lpCreateParams;
+    HINSTANCE   hInstance;
+    HMENU       hMenu;
+    HWND        hwndParent;
+    int         cy;
+    int         cx;
+    int         y;
+    int         x;
+    LONG        style;
+    LPCSTR      lpszName;
+    LPCSTR      lpszClass;
+    DWORD       dwExStyle;
+}
+typedef CREATESTRUCTA* LPCREATESTRUCTA;
+struct CREATESTRUCTW {
+    LPVOID      lpCreateParams;
+    HINSTANCE   hInstance;
+    HMENU       hMenu;
+    HWND        hwndParent;
+    int         cy;
+    int         cx;
+    int         y;
+    int         x;
+    LONG        style;
+    LPCWSTR     lpszName;
+    LPCWSTR     lpszClass;
+    DWORD       dwExStyle;
+}
+typedef CREATESTRUCTW* LPCREATESTRUCTW;
+@unicode CREATESTRUCT;
+
+struct WINDOWPLACEMENT {
+    UINT  length;
+    UINT  flags;
+    UINT  showCmd;
+    POINT ptMinPosition;
+    POINT ptMaxPosition;
+    RECT  rcNormalPosition;
+#ifdef _MAC
+#    RECT  rcDevice;
+#endif
+}
+typedef WINDOWPLACEMENT* PWINDOWPLACEMENT;
+typedef WINDOWPLACEMENT* LPWINDOWPLACEMENT;
+
+
+ATOM RegisterClassA(const WNDCLASSA* lpWndClass);
+ATOM RegisterClassW(const WNDCLASSW* lpWndClass);
+@unicode RegisterClass;
+
+HWND CreateWindowExA(
+    DWORD dwExStyle,
+    LPCSTR lpClassName,
+    LPCSTR lpWindowName,
+    DWORD dwStyle,
+    int X,
+    int Y,
+    int nWidth,
+    int nHeight,
+    HWND hWndParent,
+    HMENU hMenu,
+    HINSTANCE hInstance,
+    LPVOID lpParam
+);
+HWND CreateWindowExW(
+    DWORD dwExStyle,
+    LPCWSTR lpClassName,
+    LPCWSTR lpWindowName,
+    DWORD dwStyle,
+    int X,
+    int Y,
+    int nWidth,
+    int nHeight,
+    HWND hWndParent,
+    HMENU hMenu,
+    HINSTANCE hInstance,
+    LPVOID lpParam
+);
+@unicode CreateWindowEx;
+
+BOOL IsWindow(HWND hWnd);
+BOOL IsMenu(HMENU hMenu);
+BOOL IsChild(HWND hWndParent, HWND hWnd);
+BOOL DestroyWindow(HWND hWnd);
+BOOL ShowWindow(HWND hWnd, int nCmdShow);
+
+int CW_USEDEFAULT = 0x80000000;
+
+BOOL AttachThreadInput(DWORD idAttach, DWORD idAttachTo, BOOL fAttach);
+BOOL ReplyMessage(LRESULT lResult);
+BOOL WaitMessage();
+#if (_WIN32_WINNT >= 0x602)
+DWORD WaitForInputIdle(HANDLE hProcess, DWORD dwMilliseconds);
+LRESULT DefWindowProcA(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+LRESULT DefWindowProcW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+@unicode DefWindowProc;
+VOID PostQuitMessage(int nExitCode);
+
+HWND WindowFromDC(HDC hDC);
+HDC GetDC(HWND hWnd);
+HDC GetDCEx(HWND hWnd, HRGN hrgnClip, DWORD flags);
+
+#
+# GetDCEx() flags
+#
+void DCX_WINDOW           = 0x00000001;
+void DCX_CACHE            = 0x00000002;
+void DCX_NORESETATTRS     = 0x00000004;
+void DCX_CLIPCHILDREN     = 0x00000008;
+void DCX_CLIPSIBLINGS     = 0x00000010;
+void DCX_PARENTCLIP       = 0x00000020;
+void DCX_EXCLUDERGN       = 0x00000040;
+void DCX_INTERSECTRGN     = 0x00000080;
+void DCX_EXCLUDEUPDATE    = 0x00000100;
+void DCX_INTERSECTUPDATE  = 0x00000200;
+void DCX_LOCKWINDOWUPDATE = 0x00000400;
+void DCX_VALIDATE         = 0x00200000;
+
+HDC GetWindowDC(HWND hWnd);
+int ReleaseDC(HWND hWnd, HDC hDC);
+HDC BeginPaint(HWND hWnd, LPPAINTSTRUCT lpPaint);
+BOOL EndPaint(HWND hWnd, const PAINTSTRUCT* lpPaint);
+BOOL GetUpdateRect(HWND hWnd, LPRECT lpRect, BOOL bErase);
+int GetUpdateRgn(HWND hWnd, HRGN hRgn, BOOL bErase);
+int SetWindowRgn(HWND hWnd, HRGN hRgn, BOOL bRedraw);
+int GetWindowRgn(HWND hWnd, HRGN hRgn);
+#if(_WIN32_WINNT >= 0x0501)
+int GetWindowRgnBox(HWND hWnd, LPRECT lprc);
+
+int ExcludeUpdateRgn(HDC hDC, HWND hWnd);
+BOOL InvalidateRect(HWND hWnd, const RECT* lpRect, BOOL bErase);
+BOOL ValidateRect(HWND hWnd, const RECT* lpRect);
+BOOL InvalidateRgn(HWND hWnd, HRGN hRgn, BOOL bErase);
+BOOL ValidateRgn(HWND hWnd, HRGN hRgn);
+BOOL RedrawWindow(
+    HWND hWnd,
+    const RECT* lprcUpdate,
+    HRGN hrgnUpdate,
+    UINT flags
+);
+
+
+BOOL DrawFocusRect(HDC hDC, const RECT*  lprc);
+int FillRect(HDC hDC, const RECT* lprc, HBRUSH hbr);
+int FrameRect(HDC hDC, const RECT* lprc, HBRUSH hbr);
+BOOL InvertRect(HDC hDC, const RECT* lprc);
+BOOL SetRect(LPRECT lprc, int xLeft, int yTop, int xRight, int yBottom);
+BOOL SetRectEmpty(LPRECT lprc);
+BOOL CopyRect(LPRECT lprcDst, const RECT* lprcSrc);
+BOOL InflateRect(LPRECT lprc, int dx, int dy);
+BOOL IntersectRect(LPRECT lprcDst, const RECT* lprcSrc1, const RECT* lprcSrc2);
+BOOL UnionRect(LPRECT lprcDst, const RECT* lprcSrc1, const RECT* lprcSrc2);
+BOOL SubtractRect(LPRECT lprcDst, const RECT* lprcSrc1, const RECT* lprcSrc2);
+BOOL OffsetRect(LPRECT lprc, int dx, int dy);
+BOOL IsRectEmpty(const RECT* lprc);
+BOOL EqualRect(const RECT* lprc1, const RECT* lprc2);
+BOOL PtInRect(const RECT* lprc, POINT pt);
+
+#
+# Color Types
+#
+void CTLCOLOR_MSGBOX          = 0;
+void CTLCOLOR_EDIT            = 1;
+void CTLCOLOR_LISTBOX         = 2;
+void CTLCOLOR_BTN             = 3;
+void CTLCOLOR_DLG             = 4;
+void CTLCOLOR_SCROLLBAR       = 5;
+void CTLCOLOR_STATIC          = 6;
+void CTLCOLOR_MAX             = 7;
+void COLOR_SCROLLBAR          = 0;
+void COLOR_BACKGROUND         = 1;
+void COLOR_ACTIVECAPTION      = 2;
+void COLOR_INACTIVECAPTION    = 3;
+void COLOR_MENU               = 4;
+void COLOR_WINDOW             = 5;
+void COLOR_WINDOWFRAME        = 6;
+void COLOR_MENUTEXT           = 7;
+void COLOR_WINDOWTEXT         = 8;
+void COLOR_CAPTIONTEXT        = 9;
+void COLOR_ACTIVEBORDER       = 10;
+void COLOR_INACTIVEBORDER     = 11;
+void COLOR_APPWORKSPACE       = 12;
+void COLOR_HIGHLIGHT          = 13;
+void COLOR_HIGHLIGHTTEXT      = 14;
+void COLOR_BTNFACE            = 15;
+void COLOR_BTNSHADOW          = 16;
+void COLOR_GRAYTEXT           = 17;
+void COLOR_BTNTEXT            = 18;
+void COLOR_INACTIVECAPTIONTEXT= 19;
+void COLOR_BTNHIGHLIGHT       = 20;
+
+#if(WINVER >= 0x0400)
+void COLOR_3DDKSHADOW         = 21;
+#if(WINVER >= 0x0400)
+void COLOR_3DLIGHT            = 22;
+#if(WINVER >= 0x0400)
+void COLOR_INFOTEXT           = 23;
+#if(WINVER >= 0x0400)
+void COLOR_INFOBK             = 24;
+
+#if(WINVER >= 0x0500)
+void COLOR_HOTLIGHT                = 26;
+#if(WINVER >= 0x0500)
+void COLOR_GRADIENTACTIVECAPTION   = 27;
+#if(WINVER >= 0x0500)
+void COLOR_GRADIENTINACTIVECAPTION = 28;
+#if(WINVER >= 0x0501)
+void COLOR_MENUHILIGHT        = 29;
+#if(WINVER >= 0x0501)
+void COLOR_MENUBAR            = 30;
+
+#if(WINVER >= 0x0400)
+#void COLOR_DESKTOP            = COLOR_BACKGROUND;
+#if(WINVER >= 0x0400)
+#void COLOR_3DFACE             = COLOR_BTNFACE;
+#if(WINVER >= 0x0400)
+#void COLOR_3DSHADOW           = COLOR_BTNSHADOW;
+#if(WINVER >= 0x0400)
+#void COLOR_3DHIGHLIGHT        = COLOR_BTNHIGHLIGHT;
+#if(WINVER >= 0x0400)
+#void COLOR_3DHILIGHT          = COLOR_BTNHIGHLIGHT;
+#if(WINVER >= 0x0400)
+#void COLOR_BTNHILIGHT         = COLOR_BTNHIGHLIGHT;

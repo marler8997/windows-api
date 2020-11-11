@@ -9,4 +9,6 @@ typedef WCHAR[*] PWSTR;
 typedef WCHAR[*] LPWSTR;
 typedef const WCHAR[*] LPCWSTR;
 
+typedef int16_t SHORT;
+
 typedef void* HANDLE;

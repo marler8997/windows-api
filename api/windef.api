@@ -1,4 +1,136 @@
 typedef void* HWND;
+typedef void* HHOOK;
+typedef void* HEVENT;
+typedef void* HGDIOBJ;
+typedef void* HACCEL;
+typedef void* HBITMAP;
 typedef void* HBRUSH;
+# winver >= 0x0400
+typedef void* HCOLORSPACE;
+typedef void* HDC;
+typedef void* HGLRC;
+typedef void* HDESK;
+typedef void* HENHMETAFILE;
+typedef void* HFONT;
 typedef void* HICON;
+typedef void* HMENU;
 typedef void* HCURSOR;
+# winver >= 0x0400
+typedef void* HWINEVENTHOOK;
+# winver >= 0x0500
+typedef void* HMONITOR;
+
+typedef DWORD COLORREF;
+typedef DWORD* LPCOLORREF;
+
+struct RECT
+{
+    LONG    left;
+    LONG    top;
+    LONG    right;
+    LONG    bottom;
+}
+typedef RECT* PRECT;
+typedef RECT* NPRECT;
+typedef RECT* LPRECT;
+typedef const RECT* LPCRECT;
+
+struct RECTL
+{
+    LONG left;
+    LONG top;
+    LONG right;
+    LONG bottom;
+}
+typedef RECTL* PRECTL;
+typedef RECTL* LPRECTL;
+typedef const RECTL* LPCRECTL;
+
+struct POINT
+{
+    LONG x;
+    LONG y;
+}
+typedef POINT* PPOINT;
+typedef POINT* NPPOINT;
+typedef POINT* LPPOINT;
+
+struct POINTL
+{
+    LONG x;
+    LONG y;
+}
+typedef POINTL* PPOINTL;
+
+struct SIZE
+{
+    LONG cx;
+    LONG cy;
+}
+typedef SIZE* PSIZE;
+typedef SIZE* LPSIZE;
+
+typedef SIZE SIZEL;
+typedef SIZE* PSIZEL;
+typedef SIZE* LPSIZEL;
+
+
+struct POINTS
+{
+    SHORT x;
+    SHORT y;
+}
+typedef POINTS* PPOINTS;
+typedef POINTS* LPPOINTS;
+
+# mode selections for the device mode function
+void DM_UPDATE          = 1;
+void DM_COPY            = 2;
+void DM_PROMPT          = 4;
+void DM_MODIFY          = 8;
+
+#void DM_IN_BUFFER      = DM_MODIFY;
+#void DM_IN_PROMPT      = DM_PROMPT;
+#void DM_OUT_BUFFER     = DM_COPY;
+#void DM_OUT_DEFAULT    = DM_UPDATE;
+
+#/* device capabilities indices */
+void DC_FIELDS          = 1;
+void DC_PAPERS          = 2;
+void DC_PAPERSIZE       = 3;
+void DC_MINEXTENT       = 4;
+void DC_MAXEXTENT       = 5;
+void DC_BINS            = 6;
+void DC_DUPLEX          = 7;
+void DC_SIZE            = 8;
+void DC_EXTRA           = 9;
+void DC_VERSION         = 10;
+void DC_DRIVER          = 11;
+void DC_BINNAMES        = 12;
+void DC_ENUMRESOLUTIONS = 13;
+void DC_FILEDEPENDENCIES= 14;
+void DC_TRUETYPE        = 15;
+void DC_PAPERNAMES      = 16;
+void DC_ORIENTATION     = 17;
+void DC_COPIES          = 18;
+
+typedef void* DPI_AWARENESS_CONTEXT;
+
+#enum DPI_AWARENESS {
+#    DPI_AWARENESS_INVALID           = -1,
+#    DPI_AWARENESS_UNAWARE           = 0,
+#    DPI_AWARENESS_SYSTEM_AWARE      = 1,
+#    DPI_AWARENESS_PER_MONITOR_AWARE = 2
+#}
+
+#void DPI_AWARENESS_CONTEXT_UNAWARE               ((DPI_AWARENESS_CONTEXT)-1)
+#void DPI_AWARENESS_CONTEXT_SYSTEM_AWARE          ((DPI_AWARENESS_CONTEXT)-2)
+#void DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE     ((DPI_AWARENESS_CONTEXT)-3)
+#void DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2  ((DPI_AWARENESS_CONTEXT)-4)
+#void DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED     ((DPI_AWARENESS_CONTEXT)-5)
+
+#enum DPI_HOSTING_BEHAVIOR {
+#    DPI_HOSTING_BEHAVIOR_INVALID     = -1,
+#    DPI_HOSTING_BEHAVIOR_DEFAULT     = 0,
+#    DPI_HOSTING_BEHAVIOR_MIXED       = 1
+#}

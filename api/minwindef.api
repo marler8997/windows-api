@@ -57,6 +57,7 @@ typedef HANDLE HGLOBAL;
 typedef HANDLE HLOCAL;
 typedef HANDLE GLOBALHANDLE;
 typedef HANDLE LOCALHANDLE;
+typedef void* HRGN;
 
 typedef funcptr int() FARPROC;
 typedef funcptr int() NEARPROC;
