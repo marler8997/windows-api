@@ -34,6 +34,7 @@ def main():
     testParse("void a = 0x0;")
     testParse("void a = 0x09afAF;")
     testSyntaxError("@!", "line 1 col 2: expected an ID char after '@' but got '!' (ascii code 33)")
+    testParse("void _a = 0;")
 
     testSyntaxError("typedef", "line 1 col 8: expected type to start with ID but got: EOF")
     testSyntaxError("typedef int", "line 1 col 12: expected ID after 'typedef TYPE' but got EOF")

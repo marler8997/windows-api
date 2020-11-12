@@ -104,6 +104,8 @@ class Lexer:
                 return popSingleCharToken(self.reader, LEFT_BRACKET)
             elif c == ord(']'):
                 return popSingleCharToken(self.reader, RIGHT_BRACKET)
+            elif c == ord('_'):
+                return self.lexId(False)
             return popSingleCharToken(self.reader, UNSUPPORTED)
         if c >= ord('A'):
             return self.lexId(False)
