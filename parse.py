@@ -99,6 +99,19 @@ class FixedLenArrayType(Type):
     def __repr__(self):
         return "{}[{}]".format(self.sub_type, self.len)
 
+class ConstValue:
+    pass
+class Integer(ConstValue):
+    def __init__(self, int_value):
+        self.int_value = int_value
+    def __repr__(self):
+        return "{}".format(self.int_value)
+class NamedValue(ConstValue):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return "{}".format(self.name)
+
 class Parser:
     def __init__(self, lexer: lex.Lexer):
         self.lexer = lexer
@@ -178,10 +191,17 @@ class Parser:
         token = self.peekToken()
         if token.kind == lex.DASH:
             self.popToken()
-            return "-" + self.parseConstValue()
+            value = self.parseConstValue()
+            if isinstance(value, Integer):
+                return Integer(-value.int_value)
+            self.errAt(token, "don't know how to negate value {}".format(value))
         if token.kind == lex.NUMBER:
             self.popToken()
-            return token.value_str
+            return Integer(token.value)
+        if token.kind == lex.ID:
+            self.popToken()
+            return NamedValue(self.str[token.start:token.end])
+
         self.errAt(token, "expected a constant value but got {}".format(token.desc(self.str)))
 
     def parseTypedef(self, typedef_token):

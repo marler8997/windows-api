@@ -31,6 +31,13 @@ def typeToJsonData(t):
         return {"kind":"fixedlenarray","len":t.len,"subtype":typeToJsonData(t.sub_type)}
     raise Exception("unhandled type class {}".format(type(t).__name__))
 
+def constValueToJsonData(val):
+    if isinstance(val, parse.Integer):
+        return val.int_value
+    if isinstance(val, parse.NamedValue):
+        return val.name
+    raise Exception("unhandled ConstValue class {}".format(type(val).__name__))
+
 def toJsonData(nodes):
     types = []
     constants = []
@@ -43,7 +50,7 @@ def toJsonData(nodes):
             types.append({"kind":"struct","name":node.name,
                                 "fields":[{"type":typeToJsonData(field.type),"name":field.name} for field in node.fields]})
         elif isinstance(node, parse.ConstNode):
-            constants.append({"name":node.name,"type":typeToJsonData(node.type),"value":node.value})
+            constants.append({"name":node.name,"type":typeToJsonData(node.type),"value":constValueToJsonData(node.value)})
         elif isinstance(node, parse.FuncNode):
             functions.append({"name":node.name,"return_type":typeToJsonData(node.return_type),
                               "args":[{"type":typeToJsonData(arg.type),"name":arg.name} for arg in node.args]})
