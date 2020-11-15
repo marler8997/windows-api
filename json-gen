@@ -39,6 +39,7 @@ def constValueToJsonData(val):
     raise Exception("unhandled ConstValue class {}".format(type(val).__name__))
 
 def toJsonData(nodes):
+    includes = []
     types = []
     constants = []
     functions = []
@@ -56,9 +57,11 @@ def toJsonData(nodes):
                               "args":[{"type":typeToJsonData(arg.type),"name":arg.name} for arg in node.args]})
         elif isinstance(node, parse.UnicodeNode):
             unicode_names.append({"name":node.name})
+        elif isinstance(node, parse.IncludeNode):
+            includes.append({"filename":node.filename_no_ext})
         else:
             raise Exception("unhandled node {}".format(type(node).__name__))
-    return {"types":types,"constants":constants,"functions":functions,"unicode_names":unicode_names}
+    return {"includes":includes,"types":types,"constants":constants,"functions":functions,"unicode_names":unicode_names}
 
 def processFile(out_dir, filename):
     name = os.path.basename(filename)[:-4]

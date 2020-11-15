@@ -117,10 +117,23 @@ def generateHeader(header):
         out_file.write('#else\n')
         out_file.write('    #include <sys/types.h> // for ssize_t\n')
         out_file.write('#endif\n')
-        # write typedefs
+        include_name_map = {}
+        includes = header.jsondata["includes"]
+        out_file.write("//\n")
+        out_file.write("// {} explicit includes\n".format(len(includes)))
+        out_file.write("//\n")
+        for inc in includes:
+            filename = inc["filename"]
+            out_file.write("#include <{}.h>\n".format(filename))
+            include_name_map[filename] = True
+        out_file.write("//\n")
+        out_file.write("// implicit includes\n")
+        out_file.write("//\n")
         for i in header.imports:
-            out_file.write("#include <{}.h>\n".format(i.name))
+            if not include_name_map.get(i.name):
+                out_file.write("#include <{}.h>\n".format(i.name))
         name_kind_map = {}
+        # write typedefs
         types = header.jsondata["types"]
         out_file.write("//\n")
         out_file.write("// typedefs\n")

@@ -109,6 +109,10 @@ def main():
     testSyntaxError("@unicode a", "line 1 col 11: expected ; after @unicode ID but got EOF")
     testParse("@unicode a;")
 
+    testSyntaxError("@include", "line 1 col 9: expected STRING after @include but got EOF")
+    testSyntaxError("@include \"what\"", "line 1 col 10: @include filenames must end with '.h' but got 'what'")
+    testParse("@include \"what.h\"")
+
     print("Success")
 
 main()

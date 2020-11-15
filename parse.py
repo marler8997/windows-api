@@ -62,10 +62,18 @@ class ArgNode(Node):
 class UnicodeNode(Node):
     def __init__(self, unicode_token, name):
         Node.__init__(self)
+        self.unicode_token = unicode_token
         self.name = name
     def getToken(self):
         return self.unicode_token
 
+class IncludeNode(Node):
+    def __init__(self, include_token, filename_no_ext):
+        Node.__init__(self)
+        self.include_token = include_token
+        self.filename_no_ext = filename_no_ext
+    def getToken(self):
+        return self.unicode_token
 
 class Type:
     pass
@@ -164,6 +172,9 @@ class Parser:
             if id == "@unicode":
                 self.popToken()
                 return self.parseUnicode(first_token)
+            elif id == "@include":
+                self.popToken()
+                return self.parseInclude(first_token)
 
         #
         # must be a function or constant
@@ -186,6 +197,12 @@ class Parser:
         name_token = self.peekPopKnownToken("after @unicode", (lex.ID,))
         _ = self.peekPopKnownToken("after @unicode ID", (lex.SEMICOLON,))
         return UnicodeNode(unicode_token, self.str[name_token.start:name_token.end])
+
+    def parseInclude(self, include_token):
+        filename_token = self.peekPopKnownToken("after @include", (lex.STRING,))
+        if not filename_token.value.endswith(".h"):
+            self.errAt(filename_token, "@include filenames must end with '.h' but got '{}'".format(filename_token.value))
+        return IncludeNode(include_token, filename_token.value[:-2])
 
     def parseConstValue(self):
         token = self.peekToken()

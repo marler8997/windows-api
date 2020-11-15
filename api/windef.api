@@ -1,3 +1,6 @@
+@include "minwindef.h"
+@include "winnt.h"
+
 typedef void* HWND;
 typedef void* HHOOK;
 typedef void* HEVENT;
