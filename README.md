@@ -1,3 +1,11 @@
+# Project is now Obselete
+
+Microsoft recently released a new project that will that accomplishes the same goal as this project.  It can be found here:
+
+https://github.com/microsoft/win32metadata
+
+I'm abandoning this project and will move forward using `win32metadata` instead.
+
 # Windows API
 
 The Windows API in a parseable format.
